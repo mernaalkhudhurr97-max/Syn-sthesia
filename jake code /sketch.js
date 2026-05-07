@@ -3,53 +3,59 @@ let fft;
 let smoothing = 0.8; 
 let bins = 512;
 let waveform = [];
-let r = 100;
 let spectrum = [];
-
 
 function preload() {
   song = loadSound('assets/songforcode.wav');
 }
 
-function setup () {
+function setup() {
   createCanvas(400, 400);
-  song.play();
+
   fft = new p5.FFT(smoothing, bins);
+  fft.setInput(song);
 }
 
-function draw () {
+function draw() {
   background(220);
-  waveform = fft.waveform();
+
   spectrum = fft.analyze();
+  waveform = fft.waveform();
+
   let vol = fft.getEnergy(20, 140);
 
-  if (vol > 200) {
-    stroke(255,0,0);
-  } else if (vol > 150) {
-    stroke(255,255,0);
+  // Bass energy changes colour
+  if (vol > 150) {
+    stroke(255, 255, 0); // yellow = strong bass
+  } else if (vol > 100) {
+    stroke(255, 0, 0); // red = medium bass
   } else {
-    stroke(0)
+    stroke(0); // black = low bass
   }
 
-  stroke(255,0,255);
+  // Draw spectrum
   for (let i = 0; i < spectrum.length; i++) {
     let x = map(i, 0, spectrum.length, 0, width);
     let y = map(spectrum[i], 0, 255, height, 0);
-    line(x, height, x, y);
-}
-}
 
-  for (let i = 0; i < spectrum.length; i++) {
-    let y = map(spectrum[i], 0, 255, height, 0);
-    line(i, 0, i,y);
+    line(x, height, x, y);
   }
 
+  // Draw waveform
+  noStroke();
+  fill(0);
 
   for (let i = 0; i < waveform.length; i++) {
+    let x = map(i, 0, waveform.length, 0, width);
     let y = map(waveform[i], -1, 1, 0, height);
-    ellipse(i, y, 1, 1);
+
+    ellipse(x, y, 2, 2);
   }
 
+  fill(0);
+  noStroke();
+  text("Click to play / pause", 20, 20);
+}
 
 function mousePressed() {
   userStartAudio();
@@ -59,5 +65,4 @@ function mousePressed() {
   } else {
     song.play();
   }
-
 }
