@@ -47,11 +47,21 @@ function draw() {
   let snarevol = musicData.snaredrum;
 
   if (snarevol > 150) {
-    stroke(255, 255, 255); // yellow = strong kick
+    stroke(255, 255, 255); // yellow = strong snare
   } else if (snarevol > 100) {
-    stroke(0, 255, 255); // red = medium kick
+    stroke(0, 255, 255); // red = medium snare
   } else {
-    stroke(255, 0, 255); // black = low kick
+    stroke(255, 0, 255); // black = low snare
+  }
+
+  let hihatvol = musicData.hihat;
+
+  if (hihatvol > 100) {
+    stroke(255, 255, 255); // yellow = strong hh
+  } else if (hihatvol > 100) {
+    stroke(0, 255, 255); // red = medium hh
+  } else {
+    stroke(255, 0, 255); // black = low hh
   }
 
 
