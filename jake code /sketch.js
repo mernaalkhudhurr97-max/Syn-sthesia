@@ -36,9 +36,9 @@ function draw() {
   // Use kickdrum energy to change spectrum colour
   let kickvol = musicData.kickdrum;
 
-  if (vol > 150) {
+  if (kickvol > 150) {
     stroke(255, 255, 0); // yellow = strong kick
-  } else if (vol > 100) {
+  } else if (kickvol > 100) {
     stroke(255, 0, 0); // red = medium kick
   } else {
     stroke(0); // black = low kick
@@ -46,7 +46,7 @@ function draw() {
 
   let snarevol = musicData.snaredrum;
 
-  if (vol > 150) {
+  if (snarevol > 150) {
     stroke(255, 255, 255); // yellow = strong kick
   } else if (snarevol > 100) {
     stroke(0, 255, 255); // red = medium kick
