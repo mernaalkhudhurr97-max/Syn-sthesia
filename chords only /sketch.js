@@ -4,8 +4,7 @@ let fft;
 let smoothing = 0.8;
 let bins = 4096;
 
-let detectedNote = "unknown";
-let detectedFreq = 0;
+let detectedNotes = [];
 let detectedEnergy = 0;
 
 function preload() {
@@ -26,7 +25,7 @@ function draw() {
 
   fft.analyze();
 
-  detectStrongestNote();
+  detectTwoStrongestNotes();
   drawNoteVisual();
   drawTextInfo();
 }
@@ -41,27 +40,58 @@ function mousePressed() {
   }
 }
 
-function detectStrongestNote() {
-  let strongestEnergy = 0;
-  let strongestFreq = 0;
+function detectTwoStrongestNotes() {
+  let noteResults = [];
 
   // Check musical note range from about C2 to C6
   for (let freq = 65; freq <= 1046; freq += 2) {
     let energy = fft.getEnergy(freq - 1, freq + 1);
 
-    if (energy > strongestEnergy) {
-      strongestEnergy = energy;
-      strongestFreq = freq;
+    if (energy > 20) {
+      let noteName = frequencyToNoteName(freq);
+
+      noteResults.push({
+        note: noteName,
+        frequency: freq,
+        energy: energy
+      });
     }
   }
 
-  detectedFreq = strongestFreq;
-  detectedEnergy = strongestEnergy;
+  // Sort from strongest energy to weakest energy
+  noteResults.sort(function(a, b) {
+    return b.energy - a.energy;
+  });
 
-  if (strongestEnergy < 20) {
-    detectedNote = "unknown";
+  // Remove duplicates of the same note name
+  let uniqueNotes = [];
+
+  for (let i = 0; i < noteResults.length; i++) {
+    let current = noteResults[i];
+
+    let alreadyExists = false;
+
+    for (let j = 0; j < uniqueNotes.length; j++) {
+      if (uniqueNotes[j].note === current.note) {
+        alreadyExists = true;
+      }
+    }
+
+    if (!alreadyExists) {
+      uniqueNotes.push(current);
+    }
+
+    if (uniqueNotes.length === 2) {
+      break;
+    }
+  }
+
+  detectedNotes = uniqueNotes;
+
+  if (detectedNotes.length > 0) {
+    detectedEnergy = detectedNotes[0].energy;
   } else {
-    detectedNote = frequencyToNoteName(strongestFreq);
+    detectedEnergy = 0;
   }
 }
 
@@ -83,28 +113,49 @@ function frequencyToNoteName(freq) {
 }
 
 function drawNoteVisual() {
-  if (detectedNote.startsWith("C")) {
-    fill(255, 80, 80, 160); // red
-  } else if (detectedNote.startsWith("D")) {
-    fill(255, 160, 80, 160); // orange
-  } else if (detectedNote.startsWith("E")) {
-    fill(255, 230, 80, 160); // yellow
-  } else if (detectedNote.startsWith("F")) {
-    fill(100, 255, 100, 160); // green
-  } else if (detectedNote.startsWith("G")) {
-    fill(80, 180, 255, 160); // blue
-  } else if (detectedNote.startsWith("A")) {
-    fill(120, 100, 255, 160); // purple-blue
-  } else if (detectedNote.startsWith("B")) {
-    fill(220, 100, 255, 160); // purple
-  } else {
-    fill(120, 160); // grey
-  }
-
   noStroke();
 
-  let circleSize = map(detectedEnergy, 0, 255, 80, 220, true);
-  ellipse(width / 2, height / 2, circleSize, circleSize);
+  if (detectedNotes.length === 0) {
+    fill(120, 160);
+    ellipse(width / 2, height / 2, 100, 100);
+    return;
+  }
+
+  // First note visual
+  let firstNote = detectedNotes[0].note;
+  fillForNote(firstNote);
+
+  let size1 = map(detectedNotes[0].energy, 0, 255, 80, 220, true);
+  ellipse(width / 2 - 50, height / 2, size1, size1);
+
+  // Second note visual
+  if (detectedNotes.length > 1) {
+    let secondNote = detectedNotes[1].note;
+    fillForNote(secondNote);
+
+    let size2 = map(detectedNotes[1].energy, 0, 255, 60, 180, true);
+    ellipse(width / 2 + 50, height / 2, size2, size2);
+  }
+}
+
+function fillForNote(note) {
+  if (note.startsWith("C")) {
+    fill(255, 80, 80, 160);
+  } else if (note.startsWith("D")) {
+    fill(255, 160, 80, 160);
+  } else if (note.startsWith("E")) {
+    fill(255, 230, 80, 160);
+  } else if (note.startsWith("F")) {
+    fill(100, 255, 100, 160);
+  } else if (note.startsWith("G")) {
+    fill(80, 180, 255, 160);
+  } else if (note.startsWith("A")) {
+    fill(120, 100, 255, 160);
+  } else if (note.startsWith("B")) {
+    fill(220, 100, 255, 160);
+  } else {
+    fill(120, 160);
+  }
 }
 
 function drawTextInfo() {
@@ -112,14 +163,35 @@ function drawTextInfo() {
   noStroke();
 
   textSize(20);
-  text("Detected note:", width / 2, 90);
+  text("Detected notes:", width / 2, 70);
 
-  textSize(52);
-  text(detectedNote, width / 2, 150);
+  textSize(42);
 
-  textSize(16);
-  text("Frequency: " + detectedFreq.toFixed(2) + " Hz", width / 2, 210);
-  text("Energy: " + detectedEnergy.toFixed(2), width / 2, 235);
+  if (detectedNotes.length === 0) {
+    text("unknown", width / 2, 130);
+  } else if (detectedNotes.length === 1) {
+    text(detectedNotes[0].note, width / 2, 130);
+  } else {
+    text(detectedNotes[0].note + " + " + detectedNotes[1].note, width / 2, 130);
+  }
+
+  textSize(14);
+
+  if (detectedNotes.length > 0) {
+    text(
+      "1: " + detectedNotes[0].frequency.toFixed(2) + " Hz | Energy: " + detectedNotes[0].energy.toFixed(2),
+      width / 2,
+      230
+    );
+  }
+
+  if (detectedNotes.length > 1) {
+    text(
+      "2: " + detectedNotes[1].frequency.toFixed(2) + " Hz | Energy: " + detectedNotes[1].energy.toFixed(2),
+      width / 2,
+      250
+    );
+  }
 
   if (song.isPlaying()) {
     text("Playing - click to pause", width / 2, 360);
