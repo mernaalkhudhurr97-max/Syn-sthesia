@@ -10,6 +10,10 @@ function setup() {
   createCanvas(700, 500);
 
   loadMidiFile("assets/songforcode.mid");
+  loadMidiFile("assets/drums.mid", "drums");
+  loadMidiFile("assets/piano.mid", "piano");
+  loadMidiFile("assets/guitar.mid", "guitar");
+  loadMidiFile("assets/bass.mid", "bass");
 }
 
 function draw() {
