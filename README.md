@@ -1,6 +1,9 @@
 Final Assessment Project Pitch
+
 Working Title: Living Score
+
 Part 1: Project Direction
+
 Our team has chosen to create an original interactive audiovisual piece.
 
 Team Vision
