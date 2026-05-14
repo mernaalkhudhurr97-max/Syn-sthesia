@@ -35,6 +35,8 @@ Team Members and Mechanics
 | Team Member 2 | Random animation |
 | Merna | Background visual |
 | Team Member 4 | Visual control of audio effects |
+
+
 Mechanic 1: Audio / Music Output System
 Owner: Jake
 
