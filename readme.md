@@ -16,6 +16,7 @@ This project inspired us by its usage of repeating visuals, rhythmic timing and 
 
 Inspiration 2: Patt Vira - Musical Onion
 This project inspired us on generating visual contents based on the music played so that the artwork would be playful yet structured in a clean way. 
+
 <img width="539" height="541" alt="Screenshot 2026-05-14 at 20 35 15" src="https://github.com/user-attachments/assets/8c1e41f5-6b70-43a1-9261-023b607042a3" />
 
 Inspiration 3: Abstract Audio Visualisers
