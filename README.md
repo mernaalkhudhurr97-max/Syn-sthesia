@@ -2,8 +2,6 @@ Final Assessment Project Pitch
 
 Working Title: Living Score
 
-Part 1: Project Direction
-
 Our team has chosen to create an original interactive audiovisual piece.
 
 Team Vision
@@ -43,14 +41,14 @@ Team Members and Mechanics
 Mechanic 1: Audio / Music Output System
 Owner: Jake
 
-The audio system uses one WAV file and multiple MIDI files to generate musical events the rest of the project can respond to. The WAV file is the main audio the audience hears, while the MIDI files give us accurate information about when specific sounds happen—like kicks, snares, hi‑hats, piano notes, guitar notes, and bass notes. This avoids relying only on FFT guessing. MIDI also lets us detect both single hits and multiple notes at once.
+The audio system uses one WAV file and multiple MIDI files to generate musical events the rest of the project can respond to. The WAV file is the main audio the audience hears, while the MIDI files give us accurate information about when specific sounds happen like kicks, snares, hi‑hats, piano notes, guitar notes, and bass notes. This avoids relying only on FFT guessing. MIDI also lets us detect both single hits and multiple notes at once.
 
 This mechanic also supports the idea that visuals can shape the music. Certain visual elements will be able to mute, unmute, switch, or adjust the volume of different musical layers. FFT analysis of the final audio output will also influence colour, movement, and atmosphere. This system acts as the “music brain” of the project, giving the other mechanics clear musical triggers to work with.
 
 Mechanic 2: Random Animation
 Owner: Team Member 2
 
-This mechanic creates small visual elements that move in unpredictable ways. Random values will control things like position, size, colour, speed, and direction. These shapes—such as particles, circles, or lines will appear in different places and behave differently each time. Some of them will also react to musical events, like growing when the kick hits or changing direction on a snare.
+This mechanic creates small visual elements that move in unpredictable ways. Random values will control things like position, size, colour, speed, and direction. These shapes such as particles, circles, or lines will appear in different places and behave differently each time. Some of them will also react to musical events, like growing when the kick hits or changing direction on a snare.
 
 This supports our vision by making the artwork feel alive instead of static. Even though the movement is random, it still connects to the audio system so it doesn’t feel disconnected. The user might not control these elements directly, but they’ll see constant motion and variation across the canvas.
 
@@ -66,7 +64,7 @@ Owner: Team Member 4
 
 This mechanic lets visuals influence the music. Certain shapes or objects on the canvas will be able to control audio behaviours like volume, muting, switching layers, or triggering simple effects. For example, a shape moving across the screen might slowly increase the bass volume, or entering a specific zone might mute the drums. User input like mouse or keyboard may also move or interact with these visual controllers.
 
-This supports our vision by creating a two‑way relationship between sound and visuals. Instead of visuals only reacting to music, the artwork can also change how the music is heard. This makes the piece more interactive and performative.
+This supports our vision by creating a two way relationship between sound and visuals. Instead of visuals only reacting to music, the artwork can also change how the music is heard. This makes the piece more interactive and performative.
 
 Part 3: Putting It Together
 The final piece works as a connected audiovisual system. The WAV file provides the main sound, and the MIDI data gives accurate musical triggers. The random animation and background visuals respond to these triggers, while some visual elements also control the audio by muting, switching, or adjusting layers. FFT analysis adds another layer of responsiveness, letting the visuals react to the final sound output. Together, everything forms one coherent system where music and visuals continuously influence each other.
