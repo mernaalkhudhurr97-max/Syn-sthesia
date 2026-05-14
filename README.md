@@ -50,21 +50,21 @@ This mechanic also supports the idea that visuals can shape the music. Certain v
 Mechanic 2: Random Animation
 Owner: Team Member 2
 
-This mechanic creates small visual elements that move in unpredictable ways. Random values will control things like position, size, colour, speed, and direction. These shapes—such as particles, circles, or lines—will appear in different places and behave differently each time. Some of them will also react to musical events, like growing when the kick hits or changing direction on a snare.
+This mechanic creates small visual elements that move in unpredictable ways. Random values will control things like position, size, colour, speed, and direction. These shapes—such as particles, circles, or lines will appear in different places and behave differently each time. Some of them will also react to musical events, like growing when the kick hits or changing direction on a snare.
 
 This supports our vision by making the artwork feel alive instead of static. Even though the movement is random, it still connects to the audio system so it doesn’t feel disconnected. The user might not control these elements directly, but they’ll see constant motion and variation across the canvas.
 
 Mechanic 3: Background Visual
 Owner: Merna
 
-The background visual mechanic sets the overall mood of Living Score. Instead of a flat colour, the background will be made of moving gradients, waves, particles, and Perlin‑noise‑based textures. Low‑frequency energy from the FFT can make the background pulse slowly, while higher frequencies can create sharper flickers or bright accents. The background can also shift depending on which musical layer is active—drums, bass, piano, or guitar—so the atmosphere changes with the music.
+The background visual mechanic sets the overall mood of Living Score. Instead of a flat colour, the background will be made of moving gradients, waves, particles, and Perlin noise based textures. Low frequency energy from the FFT can make the background pulse slowly, while higher frequencies can create sharper flickers or bright accents. The background can also shift depending on which musical layer is active—drums, bass, piano, or guitar so the atmosphere changes with the music.
 
-This mechanic ties the whole piece together visually. While the audio system provides musical structure and the random animation adds movement, the background creates the emotional tone. Perlin noise helps everything feel smooth and natural instead of chaotic. Using noise‑based clouds, pulsing gradients, wave‑like motion, and colour changes, the background becomes a living canvas that connects all the mechanics into one coherent world.
+This mechanic ties the whole piece together visually. While the audio system provides musical structure and the random animation adds movement, the background creates the emotional tone. Perlin noise helps everything feel smooth and natural instead of chaotic. Using noise based clouds, pulsing gradients, wave like motion, and colour changes, the background becomes a living canvas that connects all the mechanics into one coherent world.
 
 Mechanic 4: Visual Control of Audio Effects
 Owner: Team Member 4
 
-This mechanic lets visuals influence the music. Certain shapes or objects on the canvas will be able to control audio behaviours like volume, muting, switching layers, or triggering simple effects. For example, a shape moving across the screen might slowly increase the bass volume, or entering a specific zone might mute the drums. User input—like mouse or keyboard—may also move or interact with these visual controllers.
+This mechanic lets visuals influence the music. Certain shapes or objects on the canvas will be able to control audio behaviours like volume, muting, switching layers, or triggering simple effects. For example, a shape moving across the screen might slowly increase the bass volume, or entering a specific zone might mute the drums. User input like mouse or keyboard may also move or interact with these visual controllers.
 
 This supports our vision by creating a two‑way relationship between sound and visuals. Instead of visuals only reacting to music, the artwork can also change how the music is heard. This makes the piece more interactive and performative.
 
