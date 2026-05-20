@@ -1,23 +1,26 @@
-// musicOutputs.js
-// This file only reads MIDI and creates simple outputs.
-// Group members should NOT put visual code here.
+/// drum output variables
 
-let midiData;
+let drumSounds = [];
 let allMidiNotes = [];
+let midiData;
 
-preload() {
-  DrumSound [0] = loadsound("assesst/drum 1.wav");
-  DrumSound [1] = loadsound("assesst/drum 2.wav");
-  DrumSound [2] = loadsound("assesst/drum 3.wav");
-  DrumSound [3] = loadsound("assesst/drum 4.wav");
+function preload() {
+  // Load WAV audio files
+  drumSounds[0] = loadSound("assets/drum 1.wav");
+  drumSounds[1] = loadSound("assets/drum 2.wav");
+  drumSounds[2] = loadSound("assets/drum 3.wav");
+  drumSounds[3] = loadSound("assets/drum 4.wav");
 }
-preload() {
+
+function setup() {
+  createCanvas(800, 600);
+
+  // Load MIDI files
   loadMidiFile("assets/drum 1.mid");
   loadMidiFile("assets/drum 2.mid");
   loadMidiFile("assets/drum 3.mid");
   loadMidiFile("assets/drum 4.mid");
 }
-
 
 // Drum output parameters
 let bassKick = "off";
@@ -57,6 +60,7 @@ let drumMap = {
   51: "rideCymbal"
 };
 
+// Loads a MIDI file and extracts drum notes.
 function loadMidiFile(path) {
   fetch(path)
     .then(function(response) {
@@ -78,7 +82,7 @@ function loadMidiFile(path) {
         }
       }
 
-      console.log("MIDI loaded:", allMidiNotes);
+      console.log("MIDI loaded:", path, allMidiNotes);
     });
 }
 
@@ -116,11 +120,12 @@ function resetDrumOutputs() {
   rideCymbal = "off";
 }
 
+// This was missing
 function getVelocityLevel(velocity) {
-  if (velocity < 0.5) {
-    return "soft";
+  if (velocity < 0.33) {
+    return "low";
   } else {
-    return "loud";
+    return "high";
   }
 }
 
