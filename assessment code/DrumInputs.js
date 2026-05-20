@@ -5,6 +5,20 @@
 let midiData;
 let allMidiNotes = [];
 
+preload() {
+  DrumSound [0] = loadsound("assesst/drum 1.wav");
+  DrumSound [1] = loadsound("assesst/drum 2.wav");
+  DrumSound [2] = loadsound("assesst/drum 3.wav");
+  DrumSound [3] = loadsound("assesst/drum 4.wav");
+}
+preload() {
+  loadMidiFile("assets/drum 1.mid");
+  loadMidiFile("assets/drum 2.mid");
+  loadMidiFile("assets/drum 3.mid");
+  loadMidiFile("assets/drum 4.mid");
+}
+
+
 // Drum output parameters
 let bassKick = "off";
 let rimshot = "off";
@@ -103,7 +117,7 @@ function resetDrumOutputs() {
 }
 
 function getVelocityLevel(velocity) {
-  if (velocity < 0.6) {
+  if (velocity < 0.5) {
     return "soft";
   } else {
     return "loud";

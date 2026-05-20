@@ -7,8 +7,17 @@ let triggeredNotes = [];
 let activeDrumName = "none";
 let activeMidiNote = "none";
 
+let midiStatus = "MIDI not loaded yet";
+
+// IMPORTANT: set this to your Ableton project BPM
+let abletonBPM = 160;
+
+// If the visual is consistently slightly early/late, adjust this.
+// Positive = visual later.
+// Negative = visual earlier.
+let visualOffset = 0.00;
+
 // C1 to C2 drum map
-// You can rename these later depending on your MIDI drum setup.
 let drumMap = {
   36: { name: "C1 - Low Kick", colour: [255, 60, 60], shape: "circle" },
   37: { name: "C#1 - Deep Boom", colour: [255, 110, 60], shape: "square" },
@@ -54,6 +63,31 @@ function mousePressed() {
   }
 }
 
+function keyPressed() {
+  // Restart
+  if (key === "r" || key === "R") {
+    song.stop();
+    resetMidiTriggers();
+    triggeredNotes = [];
+    activeDrumName = "none";
+    activeMidiNote = "none";
+    song.play();
+  }
+
+  // Fine timing adjustment if needed
+  if (key === "[") {
+    visualOffset -= 0.01;
+    resetMidiTriggersToCurrentTime();
+    console.log("visualOffset:", visualOffset);
+  }
+
+  if (key === "]") {
+    visualOffset += 0.01;
+    resetMidiTriggersToCurrentTime();
+    console.log("visualOffset:", visualOffset);
+  }
+}
+
 // ----------------------------
 // Load MIDI file
 // ----------------------------
@@ -61,10 +95,20 @@ function mousePressed() {
 function loadMidiFile(path) {
   fetch(path)
     .then(function(response) {
+      if (!response.ok) {
+        throw new Error("Could not load " + path);
+      }
+
       return response.arrayBuffer();
     })
     .then(function(arrayBuffer) {
       midiData = new Midi(arrayBuffer);
+
+      allMidiNotes = [];
+
+      // PPQ means pulses/ticks per quarter note.
+      // Tonejs/Midi sometimes stores it as ppq or PPQ depending on version.
+      let ppq = midiData.header.ppq || midiData.header.PPQ || 480;
 
       for (let track of midiData.tracks) {
         for (let note of track.notes) {
@@ -73,7 +117,12 @@ function loadMidiFile(path) {
             allMidiNotes.push({
               midi: note.midi,
               name: note.name,
-              time: note.time,
+
+              // IMPORTANT:
+              // Do NOT use note.time here.
+              // We calculate time from ticks using the Ableton BPM.
+              time: ticksToSeconds(note.ticks, ppq, abletonBPM),
+
               duration: note.duration,
               velocity: note.velocity,
               triggered: false
@@ -82,8 +131,32 @@ function loadMidiFile(path) {
         }
       }
 
+      allMidiNotes.sort(function(a, b) {
+        return a.time - b.time;
+      });
+
+      midiStatus =
+        "Loaded " +
+        allMidiNotes.length +
+        " MIDI notes at " +
+        abletonBPM +
+        " BPM";
+
+      console.log("PPQ:", ppq);
+      console.log("Ableton BPM:", abletonBPM);
       console.log("Loaded drum MIDI notes:", allMidiNotes);
+      console.log("Original MIDI tempos:", midiData.header.tempos);
+    })
+    .catch(function(error) {
+      midiStatus = "FAILED loading MIDI";
+      console.log(error);
     });
+}
+
+function ticksToSeconds(ticks, ppq, bpm) {
+  let beats = ticks / ppq;
+  let seconds = beats * (60 / bpm);
+  return seconds;
 }
 
 // ----------------------------
@@ -98,15 +171,21 @@ function checkMidiTriggers() {
   let currentTime = song.currentTime();
 
   for (let note of allMidiNotes) {
-    // Trigger once when song time passes the MIDI note time
-    if (!note.triggered && currentTime >= note.time) {
+    let triggerTime = note.time + visualOffset;
+
+    if (!note.triggered && currentTime >= triggerTime) {
       note.triggered = true;
 
       let drumInfo = drumMap[note.midi];
 
       if (drumInfo) {
         activeDrumName = drumInfo.name;
-        activeMidiNote = note.name + " / MIDI " + note.midi;
+        activeMidiNote =
+          note.name +
+          " / MIDI " +
+          note.midi +
+          " / time " +
+          nf(note.time, 1, 3);
 
         triggeredNotes.push({
           midi: note.midi,
@@ -121,7 +200,40 @@ function checkMidiTriggers() {
           y: random(150, height - 100),
           size: map(note.velocity, 0, 1, 40, 180)
         });
+
+        console.log(
+          "TRIGGER",
+          "MIDI:", note.midi,
+          note.name,
+          "MIDI time:", note.time,
+          "Audio time:", currentTime,
+          "Diff:", currentTime - note.time
+        );
       }
+    }
+  }
+}
+
+// ----------------------------
+// Reset MIDI trigger helpers
+// ----------------------------
+
+function resetMidiTriggers() {
+  for (let note of allMidiNotes) {
+    note.triggered = false;
+  }
+}
+
+function resetMidiTriggersToCurrentTime() {
+  let currentTime = song.currentTime();
+
+  for (let note of allMidiNotes) {
+    let triggerTime = note.time + visualOffset;
+
+    if (triggerTime < currentTime) {
+      note.triggered = true;
+    } else {
+      note.triggered = false;
     }
   }
 }
@@ -229,12 +341,18 @@ function drawInfo() {
   text("Active drum: " + activeDrumName, width / 2, 75);
   text("MIDI note: " + activeMidiNote, width / 2, 100);
 
+  textSize(13);
+  text("Audio time: " + nf(song.currentTime(), 1, 3), width / 2, 130);
+  text("Ableton BPM used: " + abletonBPM, width / 2, 150);
+  text("Visual offset: " + nf(visualOffset, 1, 3), width / 2, 170);
+  text(midiStatus, width / 2, 190);
+
   if (song.isPlaying()) {
-    text("Playing - click to pause", width / 2, height - 35);
+    text("Playing - click to pause | R restart | [ earlier / ] later", width / 2, height - 35);
   } else {
     text("Paused - click to play", width / 2, height - 35);
   }
 
   textSize(12);
-  text("Using MIDI notes C1 to C2 / MIDI 24 to 36", width / 2, height - 15);
+  text("Using MIDI notes 36 to 48 / timing converted from ticks at 160 BPM", width / 2, height - 15);
 }
