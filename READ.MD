@@ -59,7 +59,7 @@ Example outputs may include:
 
 `bassKick`, `snareDrum`, `closedHihat`, `pianoNote`, `guitarNote`, `bassNote`, `bassVolume`, `drumVolume`, and `fftEnergy`.
 
-![Audio mechanic diagram](images/audio-midi-diagram.png)
+
 
 ---
 
@@ -72,7 +72,7 @@ This mechanic connects to our project vision because we want the artwork to feel
 
 Possible code ideas may include random positions, random colours, random object sizes, and random movement directions.
 
-![Random animation sketch](images/random-animation-sketch.png)
+
 
 ---
 
@@ -85,7 +85,7 @@ This mechanic connects to our project vision because the background will hold al
 
 Possible visual ideas include noise-based clouds, pulsing gradients, moving waves, and frequency-reactive colour shifts.
 
-![Background visual reference](images/background-visual-sketch.png)
+
 
 ---
 
@@ -98,7 +98,7 @@ This mechanic connects strongly to the project vision because it creates a feedb
 
 Possible controls include mouse position, object collision, visual zones, volume mapping, and mute or unmute states.
 
-![Visual audio control sketch](images/visual-audio-control-sketch.png)
+
 
 ---
 
