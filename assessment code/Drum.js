@@ -7,6 +7,7 @@ let DrumMidiTracks = [];
 
 let activeDrumTrack = 0;
 let DrumIsPlaying = false;
+let DrumMuted = false;
 
 let DrumBPM = 160;
 let DrumFadeTime = 0.05;
@@ -92,6 +93,10 @@ function drumTicksToSeconds(ticks, ppq, bpm) {
 function getActiveDrumHits() {
   let hits = [];
 
+  if (DrumMuted) {
+    return hits;
+  }
+
   if (!DrumMidiTracks[activeDrumTrack]) {
     return hits;
   }
@@ -125,8 +130,30 @@ function playDrum() {
   DrumSongs[activeDrumTrack].play();
 
   DrumIsPlaying = true;
+
+  if (!DrumMuted) {
+    DrumSongs[activeDrumTrack].setVolume(1);
+    DrumSongs[activeDrumTrack].play();
+  }
 }
 
+
+function muteDrum() {
+  DrumMuted = true;
+
+  let oldSong = DrumSongs[activeDrumTrack];
+
+  if (oldSong && oldSong.isPlaying()) {
+    oldSong.setVolume(0, DrumFadeTime);
+    
+    setTimeout(function() { 
+      if (DrumMuted) {
+        oldSong.stop();
+        oldSong.setVolume(1);
+      }
+    }, DrumFadeTime * 1000 + 20);
+  }
+}
 
 // --------------------------------------------------
 // PAUSE CURRENT DRUM TRACK
@@ -150,10 +177,18 @@ function switchDrumTrack(newTrack) {
     return;
   }
 
+  let currentTime = 0;
+
+  if (DrumMuted && DrumSongs[activeDrumTrack] && DrumSongs[activeDrumTrack].isPlaying()) {
+    currentTime = DrumSongs[activeDrumTrack].currentTime();
+  } else if (BassSongs[activeBassTrack]) {
+    currentTime = BassSongs[activeBassTrack].currentTime();
+  }
+
   let oldSong = DrumSongs[activeDrumTrack];
   let newSong = DrumSongs[newTrack];
 
-  let currentTime = oldSong.currentTime();
+  
   let wasPlaying = DrumIsPlaying;
 
   activeDrumTrack = newTrack;

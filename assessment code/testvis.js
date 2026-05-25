@@ -129,6 +129,14 @@ function keyPressed() {
     switchBassTrack(3);
     activeBassNote = "Bass Track 4";
   }
+
+
+  if (key === "5") {
+    muteBass();
+    activeBassNote = "No Bass";
+    activeBassMidi = "-";
+    activeBassVelocity = "off";
+  }
 }
 
 

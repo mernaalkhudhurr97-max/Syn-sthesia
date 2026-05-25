@@ -4,6 +4,7 @@ let GuitarMidiTracks = [];
 
 let activeGuitarTrack = 0;
 let GuitarIsPlaying = false;
+let GuitarMuted = false;
 
 let GuitarBPM = 160;
 let GuitarFadeTime = 0.05;
@@ -87,6 +88,10 @@ function guitarTicksToSeconds(ticks, ppq, bpm) {
 function getActiveGuitarHits() {
   let hits = [];
 
+  if (GuitarMuted) {
+    return hits;
+  }
+
   if (!GuitarMidiTracks[activeGuitarTrack]) {
     return hits;
   }
@@ -120,6 +125,11 @@ function playGuitar() {
   GuitarSongs[activeGuitarTrack].play();
 
   GuitarIsPlaying = true;
+
+  if (!GuitarMuted) {
+    GuitarSongs[activeGuitarTrack].setVolume(1);
+    GuitarSongs[activeGuitarTrack].play();
+  }
 }
 
 
@@ -136,6 +146,23 @@ function pauseGuitar() {
 }
 
 
+function muteGuitar() {
+  GuitarMuted = true;
+
+  let oldSong = GuitarSongs[activeGuitarTrack];
+
+  if (oldSong && oldSong.isPlaying()) {
+    oldSong.setVolume(0, GuitarFadeTime);
+
+    setTimeout(function() {
+      if (GuitarMuted) {
+        oldSong.stop();
+        oldSong.setVolume(1);
+      }
+    }, GuitarFadeTime * 1000 + 10);
+  }
+}
+
 // --------------------------------------------------
 // SWITCH TRACK WITH CROSSFADE
 // --------------------------------------------------
@@ -144,12 +171,19 @@ function switchGuitarTrack(newTrack) {
   if (newTrack === activeGuitarTrack) {
     return;
   }
+    let currentTime= 0;
+
+   if (GuitarMuted && GuitarSongs[activeGuitarTrack] && GuitarSongs[activeGuitarTrack].isPlaying()) {
+    currentTime = GuitarSongs[activeGuitarTrack].currentTime();
+  } else if (BassSongs[activeBassTrack]) {
+    currentTime = BassSongs[activeBassTrack].currentTime();
+  }
 
   let oldSong = GuitarSongs[activeGuitarTrack];
   let newSong = GuitarSongs[newTrack];
 
-  let currentTime = oldSong.currentTime();
   let wasPlaying = GuitarIsPlaying;
+
 
   activeGuitarTrack = newTrack;
 

@@ -8,6 +8,7 @@ let bassMidiTracks = [];
 
 let activeBassTrack = 0;
 let bassIsPlaying = false;
+let bassMuted = false;
 
 let bassBPM = 160;
 let bassFadeTime = 0.05;
@@ -99,6 +100,9 @@ function bassTicksToSeconds(ticks, ppq, bpm) {
 function getActiveBassHits() {
   let hits = [];
 
+  if (bassMuted) {
+    return hits;
+  }
   if (!bassMidiTracks[activeBassTrack]) {
     return hits;
   }
@@ -132,8 +136,32 @@ function playBass() {
   bassSongs[activeBassTrack].play();
 
   bassIsPlaying = true;
+  if (!bassMuted) {
+    bassSongs[activeBassTrack].setVolume(1);
+    bassSongs[activeBassTrack].play();
+  }
 }
 
+// silly me forgot that it has to mute as well play nothign 
+// --------------------------------------------------
+// --- mute CURRENT BASS TRACK-- 
+
+function muteBass() {
+  bassMuted = true;
+
+  let oldSong = bassSongs[activeBassTrack];
+
+  if (oldSong && oldSong.isPlaying()) {
+    oldSong.setVolume(0, bassFadeTime);
+
+    setTimeout(function() {
+      if (bassMuted) {
+        oldSong.stop();
+        oldSong.setVolume(1);
+      }
+    }, bassFadeTime * 1000 + 10);
+  }
+}
 
 // --------------------------------------------------
 // PAUSE CURRENT BASS TRACK
@@ -157,13 +185,21 @@ function switchBassTrack(newTrack) {
     return;
   }
 
+  let currentTime = 0;
+
+  if (bassMuted && bassSongs[activeBassTrack] && bassSongs[activeBassTrack].isPlaying()) {
+    currentTime = bassSongs[activeBassTrack].currentTime();
+  } else if (GuitarSongs[activeGuitarTrack]) {
+    currentTime = GuitarSongs[activeGuitarTrack].currentTime();
+  }
+
   let oldSong = bassSongs[activeBassTrack];
   let newSong = bassSongs[newTrack];
 
-  let currentTime = oldSong.currentTime();
   let wasPlaying = bassIsPlaying;
 
   activeBassTrack = newTrack;
+  bassMuted = false;
 
   resetBassMidiTriggers(activeBassTrack);
   syncBassMidiToCurrentTime(activeBassTrack, currentTime);
