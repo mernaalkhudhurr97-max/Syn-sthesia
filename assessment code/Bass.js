@@ -1,7 +1,4 @@
-// --------------------------------------------------
-// BASS INPUTS
-// Four bass tracks that switch with keys 1, 2, 3, 4
-// --------------------------------------------------
+// bass inputs 
 
 let bassSongs = [];
 let bassMidiTracks = [];
@@ -35,6 +32,8 @@ function setupBassInputs() {
   loadBassMidiFile("assets/BassMidi/Bass 2.mid", 1);
   loadBassMidiFile("assets/BassMidi/Bass 3.mid", 2);
   loadBassMidiFile("assets/BassMidi/Bass 4.mid", 3);
+
+  setBassVolumes();
 }
 
 
@@ -90,35 +89,6 @@ function bassTicksToSeconds(ticks, ppq, bpm) {
 }
 
 
-// --------------------------------------------------
-// RETURN NEW NOTES FROM THE ACTIVE BASS TRACK
-// --------------------------------------------------
-
-function getActiveBassHits() {
-  let hits = [];
-
-  if (bassMuted) {
-    return hits;
-  }
-  if (!bassMidiTracks[activeBassTrack]) {
-    return hits;
-  }
-
-  if (!bassSongs[activeBassTrack].isPlaying()) {
-    return hits;
-  }
-
-  let currentTime = bassSongs[activeBassTrack].currentTime();
-
-  for (let note of bassMidiTracks[activeBassTrack].notes) {
-    if (!note.triggered && currentTime >= note.time) {
-      note.triggered = true;
-      hits.push(note);
-    }
-  }
-
-  return hits;
-}
 
 
 // --------------------------------------------------
@@ -149,6 +119,39 @@ function pauseBass() {
 }
 
 
+function setBassVolumes() {
+  for (let i = 0; i < bassSongs.length; i++) {
+    if (bassMuted) {
+      bassSongs[i].setVolume(0, bassFadeTime);
+    } else if (i === activeBassTrack) {
+      bassSongs[i].setVolume(1, bassFadeTime);
+    } else {
+      bassSongs[i].setVolume(0, bassFadeTime);
+    }
+  }
+}
+
+
+function switchBassTrack(newTrack) {
+  activeBassTrack = newTrack;
+  bassMuted = false;
+
+  setBassVolumes();
+
+  resetAllBassMidiTriggers();
+  syncAllBassMidiToCurrentTime();
+}
+
+
+function muteBass() {
+  bassMuted = true;
+
+  setBassVolumes();
+
+  resetAllBassMidiTriggers();
+  syncAllBassMidiToCurrentTime();
+}
+
 function getActiveBassHits() {
   let hits = [];
 
@@ -175,132 +178,46 @@ function getActiveBassHits() {
 } 
 
 function getBassCurrentTime() {
-  if (bassSongs[activeBassTrack] && bassSongs[activeBassTrack].isPlaying()) {
+  if (
+    bassSongs[activeBassTrack] &&
+    bassSongs[activeBassTrack].isPlaying()
+  ) {
     return bassSongs[activeBassTrack].currentTime();
   }
 
   return 0;
 }
 
-// silly me forgot that it has to mute as well play nothign 
-// --------------------------------------------------
-// --- mute CURRENT BASS TRACK-- 
-
-function muteBass() {
-  bassMuted = true;
-
-  let oldSong = bassSongs[activeBassTrack];
-
-  if (oldSong && oldSong.isPlaying()) {
-    oldSong.setVolume(0, bassFadeTime);
-
-    setTimeout(function() {
-      if (bassMuted) {
-        oldSong.stop();
-        oldSong.setVolume(1);
-      }
-    }, bassFadeTime * 1000 + 10);
-  }
-}
-
-// --------------------------------------------------
-// PAUSE CURRENT BASS TRACK
-// --------------------------------------------------
-
-function pauseBass() {
-  if (bassSongs[activeBassTrack].isPlaying()) {
-    bassSongs[activeBassTrack].pause();
-  }
-
-  bassIsPlaying = false;
-}
-
-
-// --------------------------------------------------
-// SWITCH TRACK WITH CROSSFADE
-// --------------------------------------------------
-
-function switchBassTrack(newTrack) {
-  if (newTrack === activeBassTrack) {
-    return;
-  }
-
-  let currentTime = 0;
-
-  if (bassMuted && bassSongs[activeBassTrack] && bassSongs[activeBassTrack].isPlaying()) {
-    currentTime = bassSongs[activeBassTrack].currentTime();
-  } else if (GuitarSongs[activeGuitarTrack]) {
-    currentTime = GuitarSongs[activeGuitarTrack].currentTime();
-  }
-
-  let oldSong = bassSongs[activeBassTrack];
-  let newSong = bassSongs[newTrack];
-
-  let wasPlaying = bassIsPlaying;
-
-  activeBassTrack = newTrack;
-  bassMuted = false;
-
-  resetBassMidiTriggers(activeBassTrack);
-  syncBassMidiToCurrentTime(activeBassTrack, currentTime);
-
-  if (wasPlaying) {
-    newSong.stop();
-    newSong.setVolume(0);
-    newSong.play(0, 1, 0, currentTime);
-
-    newSong.setVolume(1, bassFadeTime);
-    oldSong.setVolume(0, bassFadeTime);
-
-    setTimeout(function() {
-      if (oldSong !== bassSongs[activeBassTrack]) {
-        oldSong.stop();
-        oldSong.setVolume(1);
-      }
-    }, bassFadeTime * 1000 + 10);
-  }
-}
-
-
-// --------------------------------------------------
-// STOP ALL BASS AUDIO
-// --------------------------------------------------
-
-function stopAllBassAudio() {
-  for (let song of bassSongs) {
-    if (song) {
-      song.stop();
-      song.setVolume(1);
-    }
-  }
-}
 
 
 // --------------------------------------------------
 // RESET MIDI TRIGGERS
 // --------------------------------------------------
 
-function resetBassMidiTriggers(trackIndex) {
-  if (!bassMidiTracks[trackIndex]) {
-    return;
-  }
-
-  for (let note of bassMidiTracks[trackIndex].notes) {
-    note.triggered = false;
+function resetAllBassMidiTriggers() {
+  for (let t = 0; t < bassMidiTracks.length; t++) {
+    if (bassMidiTracks[t]) {
+      for (let note of bassMidiTracks[t].notes) {
+        note.triggered = false;
+      }
+    }
   }
 }
 
 
 // --------------------------------------------------
-// SKIP NOTES THAT HAPPENED BEFORE A TRACK SWITCH
+// SYNC ALL MIDI TRACKS TO THE CURRENT AUDIO TIME
+// Prevents old notes suddenly triggering after a switch.
 // --------------------------------------------------
 
-function syncBassMidiToCurrentTime(trackIndex, currentTime) {
-  if (!bassMidiTracks[trackIndex]) {
-    return;
-  }
+function syncAllBassMidiToCurrentTime() {
+  let currentTime = getBassCurrentTime();
 
-  for (let note of bassMidiTracks[trackIndex].notes) {
-    note.triggered = note.time < currentTime;
+  for (let t = 0; t < bassMidiTracks.length; t++) {
+    if (bassMidiTracks[t]) {
+      for (let note of bassMidiTracks[t].notes) {
+        note.triggered = note.time < currentTime;
+      }
+    }
   }
 }
