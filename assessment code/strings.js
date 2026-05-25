@@ -2,7 +2,7 @@
 
 
 let stringsSongs = [];
-let StringsMidiTracks = [];
+let stringsMidiTracks = [];
 
 let activeStringsTrack = 0;
 let stringsIsPlaying = false;
@@ -22,10 +22,10 @@ function preloadStringsInputs() {
 
 
 function setupStringsInputs() {
-  loadMidiFile("assets/StringsMidi/Strings 1.mid");
-  loadMidiFile("assets/StringsMidi/Strings 2.mid");
-  loadMidiFile("assets/StringsMidi/Strings 3.mid");
-  loadMidiFile("assets/StringsMidi/Strings 4.mid");
+  loadStringsMidiFile("assets/StringsMidi/Strings 1.mid", 0);
+  loadStringsMidiFile("assets/StringsMidi/Strings 2.mid", 1);
+  loadStringsMidiFile("assets/StringsMidi/Strings 3.mid", 2);
+  loadStringsMidiFile("assets/StringsMidi/Strings 4.mid", 3);
 }
 
 

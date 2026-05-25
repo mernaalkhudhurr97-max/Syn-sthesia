@@ -23,11 +23,11 @@ function preloadDrumInputs() {
 
 
 
-function setupDruminputs() {
-  loadMidiFile("assets/DrumMidi/Drum 1.mid");
-  loadMidiFile("assets/DrumMidi/Drum 2.mid");
-  loadMidiFile("assets/DrumMidi/Drum 3.mid");
-  loadMidiFile("assets/DrumMidi/Drum 4.mid");
+function setupDrumInputs() {
+  loadDrumMidiFile("assets/DrumMidi/Drum 1.mid", 0);
+  loadDrumMidiFile("assets/DrumMidi/Drum 2.mid", 1);
+  loadDrumMidiFile("assets/DrumMidi/Drum 3.mid", 2);
+  loadDrumMidiFile("assets/DrumMidi/Drum 4.mid", 3);
 
   setDrumVolumes();
 }
@@ -113,7 +113,7 @@ function pauseDrum() {
 
 function setDrumVolumes() {
   for (let i = 0; i < drumSongs.length; i++) {
-    if (DrumMuted) {
+    if (drumMuted) {
       drumSongs[i].setVolume(0, drumFadeTime);
     } else if (i === activeDrumTrack) {
       drumSongs[i].setVolume(1, drumFadeTime);
@@ -126,7 +126,7 @@ function setDrumVolumes() {
 
 function switchDrumTrack(newTrack) {
   activeDrumTrack = newTrack;
-  DrumMuted = false;
+  drumMuted = false;
 
   setDrumVolumes();
 
@@ -136,7 +136,7 @@ function switchDrumTrack(newTrack) {
 
 
 function muteDrum() {
-  DrumMuted = true;
+  drumMuted = true;
 
   setDrumVolumes();
 
@@ -147,7 +147,7 @@ function muteDrum() {
 function getActiveDrumHits() {
   let hits = [];
 
-  if (!drumIsPlaying || DrumMuted) {
+  if (!drumIsPlaying || drumMuted) {
     return hits;
   }
 

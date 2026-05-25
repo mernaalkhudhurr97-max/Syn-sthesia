@@ -173,8 +173,8 @@ function mousePressed() {
       pauseBass();
     }
 
-    if (typeof pauseDrums === "function") {
-      pauseDrums();
+    if (typeof pauseDrum === "function") {
+      pauseDrum();
     }
 
     if (typeof pauseGuitar === "function") {
@@ -191,8 +191,8 @@ function mousePressed() {
       playBass();
     }
 
-    if (typeof playDrums === "function") {
-      playDrums();
+    if (typeof playDrum === "function") {
+      playDrum();
     }
 
     if (typeof playGuitar === "function") {
