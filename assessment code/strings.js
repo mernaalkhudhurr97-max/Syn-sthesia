@@ -38,7 +38,7 @@ function setup() {
 // LOAD MIDI DATA
 // --------------------------------------------------
 
-function loadBassMidiFile(path, index) {
+function loadStringsMidiFile(path, index) {
   fetch(path)
     .then(function(response) {
       if (!response.ok) {
@@ -58,7 +58,7 @@ function loadBassMidiFile(path, index) {
           notes.push({
             midi: note.midi,
             name: note.name,
-            time: bassTicksToSeconds(note.ticks, ppq, bassBPM),
+            time: stringsTicksToSeconds(note.ticks, ppq, stringsBPM),
             velocity: note.velocity,
             triggered: false
           });
@@ -69,7 +69,7 @@ function loadBassMidiFile(path, index) {
         return a.time - b.time;
       });
 
-      bassMidiTracks[index] = {
+      StringsMidiTracks[index] = {
         notes: notes
       };
     })
@@ -80,7 +80,7 @@ function loadBassMidiFile(path, index) {
 // FORCE MIDI TIMING TO 160 BPM
 // --------------------------------------------------
 
-function bassTicksToSeconds(ticks, ppq, bpm) {
+function stringsTicksToSeconds(ticks, ppq, bpm) {
   let beats = ticks / ppq;
   return beats * (60 / bpm);
 }
@@ -88,81 +88,79 @@ function bassTicksToSeconds(ticks, ppq, bpm) {
 
 
 
-// --------------------------------------------------
-// soo silly of course bass has to all play at the same time otherwise it isnt in time. 
-// --------------------------------------------------
 
-function playBass() {
-  for (let i = 0; i < bassSongs.length; i++) {
-    bassSongs[i].stop();
+
+function playStrings() {
+  for (let i = 0; i < stringsSongs.length; i++) {
+    stringsSongs[i].stop();
   }
 
-  resetAllBassMidiTriggers();
-  setBassVolumes();
+  resetAllStringsMidiTriggers();
+  setStringsVolumes();
 
-  for (let i = 0; i < bassSongs.length; i++) {
-    bassSongs[i].play();
+  for (let i = 0; i < stringsSongs.length; i++) {
+    stringsSongs[i].play();
   }
 
-  bassIsPlaying = true;
+  stringsIsPlaying = true;
 }
 
-function pauseBass() {
-  for (let i = 0; i < bassSongs.length; i++) {
-    bassSongs[i].pause();
+function pauseStrings() {
+  for (let i = 0; i < stringsSongs.length; i++) {
+    stringsSongs[i].pause();
   }
 
-  bassIsPlaying = false;
+  stringsIsPlaying = false;
 }
 
 
-function setBassVolumes() {
-  for (let i = 0; i < bassSongs.length; i++) {
-    if (bassMuted) {
-      bassSongs[i].setVolume(0, bassFadeTime);
-    } else if (i === activeBassTrack) {
-      bassSongs[i].setVolume(1, bassFadeTime);
+function setStringsVolumes() {
+  for (let i = 0; i < stringsSongs.length; i++) {
+    if (stringsMuted) {
+      stringsSongs[i].setVolume(0, stringsFadeTime);
+    } else if (i === activeStringsTrack) {
+      stringsSongs[i].setVolume(1, stringsFadeTime);
     } else {
-      bassSongs[i].setVolume(0, bassFadeTime);
+      stringsSongs[i].setVolume(0, stringsFadeTime);
     }
   }
 }
 
 
-function switchBassTrack(newTrack) {
-  activeBassTrack = newTrack;
-  bassMuted = false;
+function switchStringsTrack(newTrack) {
+  activeStringsTrack = newTrack;
+  stringsMuted = false;
 
-  setBassVolumes();
+  setStringsVolumes();
 
-  resetAllBassMidiTriggers();
-  syncAllBassMidiToCurrentTime();
+  resetAllStringsMidiTriggers();
+  syncAllStringsMidiToCurrentTime();
 }
 
 
-function muteBass() {
-  bassMuted = true;
+function muteStrings() {
+  stringsMuted = true;
 
-  setBassVolumes();
+  setStringsVolumes();
 
-  resetAllBassMidiTriggers();
-  syncAllBassMidiToCurrentTime();
+  resetAllStringsMidiTriggers();
+  syncAllStringsMidiToCurrentTime();
 }
 
-function getActiveBassHits() {
+function getActiveStringsHits() {
   let hits = [];
 
-  if (!bassIsPlaying || bassMuted) {
+  if (!stringsIsPlaying || stringsMuted) {
     return hits;
   }
 
-  let midi = bassMidiTracks[activeBassTrack];
+  let midi = stringsMidiTracks[activeStringsTrack];
 
   if (!midi) {
     return hits;
   }
 
-   let currentTime = getBassCurrentTime();
+   let currentTime = getStringsCurrentTime();
 
   for (let note of midi.notes) {
     if (!note.triggered && currentTime >= note.time) {
@@ -174,12 +172,12 @@ function getActiveBassHits() {
   return hits;
 } 
 
-function getBassCurrentTime() {
+function getStringsCurrentTime() {
   if (
-    bassSongs[activeBassTrack] &&
-    bassSongs[activeBassTrack].isPlaying()
+    stringsSongs[activeStringsTrack] &&
+    stringsSongs[activeStringsTrack].isPlaying()
   ) {
-    return bassSongs[activeBassTrack].currentTime();
+    return stringsSongs[activeStringsTrack].currentTime();
   }
 
   return 0;
@@ -191,10 +189,10 @@ function getBassCurrentTime() {
 // RESET MIDI TRIGGERS
 // --------------------------------------------------
 
-function resetAllBassMidiTriggers() {
-  for (let t = 0; t < bassMidiTracks.length; t++) {
-    if (bassMidiTracks[t]) {
-      for (let note of bassMidiTracks[t].notes) {
+function resetAllStringsMidiTriggers() {
+  for (let t = 0; t < stringsMidiTracks.length; t++) {
+    if (stringsMidiTracks[t]) {
+      for (let note of stringsMidiTracks[t].notes) {
         note.triggered = false;
       }
     }
@@ -207,12 +205,12 @@ function resetAllBassMidiTriggers() {
 // Prevents old notes suddenly triggering after a switch.
 // --------------------------------------------------
 
-function syncAllBassMidiToCurrentTime() {
-  let currentTime = getBassCurrentTime();
+function syncAllStringsMidiToCurrentTime() {
+  let currentTime = getStringsCurrentTime();
 
-  for (let t = 0; t < bassMidiTracks.length; t++) {
-    if (bassMidiTracks[t]) {
-      for (let note of bassMidiTracks[t].notes) {
+  for (let t = 0; t < stringsMidiTracks.length; t++) {
+    if (stringsMidiTracks[t]) {
+      for (let note of stringsMidiTracks[t].notes) {
         note.triggered = note.time < currentTime;
       }
     }
