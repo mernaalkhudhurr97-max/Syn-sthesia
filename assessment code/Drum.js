@@ -2,33 +2,34 @@
 
 /// drum output variables
 
-let DrumSongs = [];
-let DrumMidiTracks = [];
+let drumSongs = [];
+let drumMidiTracks = [];
 
 let activeDrumTrack = 0;
-let DrumIsPlaying = false;
-let DrumMuted = false;
+let drumIsPlaying = false;
+let drumMuted = false;
 
-let DrumBPM = 160;
-let DrumFadeTime = 0.05;
+let drumBPM = 160;
+let drumFadeTime = 0.05;
 
 
-function preload() {
+function preloadDrumInputs() {
   // Load WAV audio files
-  drumSounds[0] = loadSound("assets/DrumWav/Drum 1.wav");
-  drumSounds[1] = loadSound("assets/DrumWav/Drum 2.wav");
-  drumSounds[2] = loadSound("assets/DrumWav/Drum 3.wav");
-  drumSounds[3] = loadSound("assets/DrumWav/Drum 4.wav");
+  drumSongs[0] = loadSound("assets/DrumWav/Drum 1.wav");
+  drumSongs[1] = loadSound("assets/DrumWav/Drum 2.wav");
+  drumSongs[2] = loadSound("assets/DrumWav/Drum 3.wav");
+  drumSongs[3] = loadSound("assets/DrumWav/Drum 4.wav");
 }
 
-function setup() {
-  createCanvas(800, 600);
 
-  // Load MIDI files
+
+function setupDruminputs() {
   loadMidiFile("assets/DrumMidi/Drum 1.mid");
   loadMidiFile("assets/DrumMidi/Drum 2.mid");
   loadMidiFile("assets/DrumMidi/Drum 3.mid");
   loadMidiFile("assets/DrumMidi/Drum 4.mid");
+
+  setDrumVolumes();
 }
 
 // --------------------------------------------------

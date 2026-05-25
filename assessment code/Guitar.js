@@ -4,21 +4,15 @@ let GuitarMidiTracks = [];
 
 
 
-let GuitarBPM = 160;
+let guitarBPM = 160;
 
 
-function preload() {
+function preloadGuitarInputs() {
   // Load WAV audio files
-  GuitarSounds = loadSound("assets/Guitar/Guitar.wav");
+  GuitarSongs = loadSound("assets/Guitar/Guitar.wav");
 }
 
 
-function setup() {
-  createCanvas(800, 600);
-
-  // Load MIDI files
-  loadMidiFile("assets/Guitar/Guitar.mid");
-}
 
 
 function setupGuitarInputs() {
