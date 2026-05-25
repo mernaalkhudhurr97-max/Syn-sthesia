@@ -1,15 +1,18 @@
 
-let GuitarSongs = [];
-let GuitarMidiTracks = [];
+let guitarSongs = [];
+let guitarMidiTracks = [];
 
+let guitarIsPlaying = false;
+let guitarMuted = false;
 
 
 let guitarBPM = 160;
+let guitarFadeTime = 0.5;
 
 
 function preloadGuitarInputs() {
   // Load WAV audio files
-  GuitarSongs = loadSound("assets/Guitar/Guitar.wav");
+  guitarSongs = loadSound("assets/Guitar/Guitar.wav");
 }
 
 
@@ -54,10 +57,8 @@ function loadGuitarMidiFile(path, index) {
         return a.time - b.time;
       });
 
-      GuitarMidiTracks[index] = {
-        notes: notes
-      };
-    })
+      guitarMidiTracks = notes
+      });
 }
 
 
@@ -75,34 +76,63 @@ function guitarTicksToSeconds(ticks, ppq, bpm) {
 
 
 function playGuitar() {
-    GuitarSongs.stop();
+    guitarSongs.stop();
   
 
-  GuitarSongs.play();
-  GuitarIsPlaying = true;
+  guitarSongs.play();
+  guitarIsPlaying = true;
 }
   
 
 function pauseGuitar() {
-    GuitarSongs.pause();
+    guitarSongs.pause();
 
-  GuitarIsPlaying = false;
+  guitarIsPlaying = false;
+}
+
+
+function setGuitarVolume() {
+  if (guitarMuted) {
+    guitarSongs.setVolume(0, guitarFadeTime);
+  } else {
+    guitarSongs.setVolume(1, guitarFadeTime);
+  }
 }
 
 
 
+function unmuteGuitar() {
+  guitarMuted = false;
+
+  setGuitarVolume();
+
+  resetAllGuitarMidiTriggers();
+  syncAllGuitarMidiToCurrentTime();
+}
+
+
+
+
+function muteGuitar() {
+  guitarMuted = true;
+
+  setGuitarVolume();
+
+  resetAllGuitarMidiTriggers();
+  syncAllGuitarMidiToCurrentTime();
+}
 
 
 function getGuitarHits() {
   let hits = [];
 
-  if (!guitarIsPlaying || !guitarSong.isPlaying()) {
+  if (!guitarIsPlaying || !guitarSongs.isPlaying()) {
     return hits;
   }
 
-  let currentTime = guitarSong.currentTime();
+  let currentTime = guitarSongs.currentTime();
 
-  for (let note of guitarMidiNotes) {
+  for (let note of guitarMidiTracks) {
     if (!note.triggered && currentTime >= note.time) {
       note.triggered = true;
       hits.push(note);
@@ -119,7 +149,7 @@ function getGuitarHits() {
 // --------------------------------------------------
 
 function resetAllGuitarMidiTriggers() {
-      for (let note of GuitarMidinotes) {
+      for (let note of guitarMidiTracks) {
         note.triggered = false;
       }
     }

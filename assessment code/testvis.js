@@ -268,8 +268,8 @@ function keyPressed() {
     drumDisplay = "Drums 4";
   }
 
-  if ((key === "t" || key === "T") && typeof muteDrums === "function") {
-    muteDrums();
+  if ((key === "t" || key === "T") && typeof muteDrum === "function") {
+    muteDrum();
     drumDisplay = "Drums Off";
   }
 

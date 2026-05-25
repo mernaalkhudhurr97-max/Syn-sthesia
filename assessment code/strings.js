@@ -64,7 +64,7 @@ function loadStringsMidiFile(path, index) {
         return a.time - b.time;
       });
 
-      StringsMidiTracks[index] = {
+      stringsMidiTracks[index] = {
         notes: notes
       };
     })
