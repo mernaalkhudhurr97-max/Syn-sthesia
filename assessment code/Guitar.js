@@ -27,62 +27,68 @@ function setup() {
 
 // idk if this is going to work 
 let guitarNotes = {
-  C1: "off",
-  Cs1: "off",
-  D1: "off",
-  Ds1: "off",
-  E1: "off",
-  F1: "off",
-  Fs1: "off",
-  G1: "off",
-  Gs1: "off",
-  A1: "off",
-  As1: "off",
-  B1: "off",
+  // Octave 4
+  C4: "off",
+  Cs4: "off",
+  D4: "off",
+  Ds4: "off",
+  E4: "off",
+  F4: "off",
+  Fs4: "off",
+  G4: "off",
+  Gs4: "off",
+  A4: "off",
+  As4: "off",
+  B4: "off",
 
-  C2: "off",
-  Cs2: "off",
-  D2: "off",
-  Ds2: "off",
-  E2: "off",
-  F2: "off",
-  Fs2: "off",
-  G2: "off",
-  Gs2: "off",
-  A2: "off",
-  As2: "off",
-  B2: "off",
+  // Octave 5
+  C5: "off",
+  Cs5: "off",
+  D5: "off",
+  Ds5: "off",
+  E5: "off",
+  F5: "off",
+  Fs5: "off",
+  G5: "off",
+  Gs5: "off",
+  A5: "off",
+  As5: "off",
+  B5: "off",
 
-  C3: "off"
+  // Final note
+  C6: "off"
 };
 
-// MIDI note number to output name
-let bassMap = {
-  36: "C1",
-  37: "Cs1",
-  38: "D1",
-  39: "Ds1",
-  40: "E1",
-  41: "F1",
-  42: "Fs1",
-  43: "G1",
-  44: "Gs1",
-  45: "A1",
-  46: "As1",
-  47: "B1",
+// MIDI note number to guitar note name
+let guitarMap = {
+  // Octave 4
+  60: "C4",
+  61: "Cs4",
+  62: "D4",
+  63: "Ds4",
+  64: "E4",
+  65: "F4",
+  66: "Fs4",
+  67: "G4",
+  68: "Gs4",
+  69: "A4",
+  70: "As4",
+  71: "B4",
 
-  48: "C2",
-  49: "Cs2",
-  50: "D2",
-  51: "Ds2",
-  52: "E2",
-  53: "F2",
-  54: "Fs2",
-  55: "G2",
-  56: "Gs2",
-  57: "A2",
-  58: "As2",
-  59: "B2",
+  // Octave 5
+  72: "C5",
+  73: "Cs5",
+  74: "D5",
+  75: "Ds5",
+  76: "E5",
+  77: "F5",
+  78: "Fs5",
+  79: "G5",
+  80: "Gs5",
+  81: "A5",
+  82: "As5",
+  83: "B5",
 
-  60: "C3"
+  // Final note
+  84: "C6"
 };

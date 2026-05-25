@@ -25,21 +25,14 @@ function setup() {
 
 }
 
-// idk if this is going to work 
+// Bass note output parameters: A1 to A3
 let bassNotes = {
-  C1: "off",
-  Cs1: "off",
-  D1: "off",
-  Ds1: "off",
-  E1: "off",
-  F1: "off",
-  Fs1: "off",
-  G1: "off",
-  Gs1: "off",
+  // A1 to B1
   A1: "off",
   As1: "off",
   B1: "off",
 
+  // Octave 2
   C2: "off",
   Cs2: "off",
   D2: "off",
@@ -53,36 +46,139 @@ let bassNotes = {
   As2: "off",
   B2: "off",
 
-  C3: "off"
+  // C3 to A3
+  C3: "off",
+  Cs3: "off",
+  D3: "off",
+  Ds3: "off",
+  E3: "off",
+  F3: "off",
+  Fs3: "off",
+  G3: "off",
+  Gs3: "off",
+  A3: "off"
 };
 
-// MIDI note number to output name
+// MIDI note number to bass note name
 let bassMap = {
-  36: "C1",
-  37: "Cs1",
-  38: "D1",
-  39: "Ds1",
-  40: "E1",
-  41: "F1",
-  42: "Fs1",
-  43: "G1",
-  44: "Gs1",
-  45: "A1",
-  46: "As1",
-  47: "B1",
+  // A1 to B1
+  33: "A1",
+  34: "As1",
+  35: "B1",
 
-  48: "C2",
-  49: "Cs2",
-  50: "D2",
-  51: "Ds2",
-  52: "E2",
-  53: "F2",
-  54: "Fs2",
-  55: "G2",
-  56: "Gs2",
-  57: "A2",
-  58: "As2",
-  59: "B2",
+  // Octave 2
+  36: "C2",
+  37: "Cs2",
+  38: "D2",
+  39: "Ds2",
+  40: "E2",
+  41: "F2",
+  42: "Fs2",
+  43: "G2",
+  44: "Gs2",
+  45: "A2",
+  46: "As2",
+  47: "B2",
 
-  60: "C3"
+  // C3 to A3
+  48: "C3",
+  49: "Cs3",
+  50: "D3",
+  51: "Ds3",
+  52: "E3",
+  53: "F3",
+  54: "Fs3",
+  55: "G3",
+  56: "Gs3",
+  57: "A3"
 };
+
+
+
+// Loads a MIDI file and extracts drum notes.
+function loadMidiFile(path) {
+  fetch(path)
+    .then(function(response) {
+      return response.arrayBuffer();
+    })
+    .then(function(arrayBuffer) {
+      midiData = new Midi(arrayBuffer);
+
+      for (let track of midiData.tracks) {
+        for (let note of track.notes) {
+          if (note.midi >= 36 && note.midi <= 51) {
+            allMidiNotes.push({
+              midi: note.midi,
+              time: note.time,
+              velocity: note.velocity,
+              triggered: false
+            });
+          }
+        }
+      }
+
+      console.log("MIDI loaded:", path, allMidiNotes);
+    });
+}
+
+function updateMusicOutputs(currentTime) {
+  resetDrumOutputs();
+
+  for (let note of allMidiNotes) {
+    if (!note.triggered && currentTime >= note.time) {
+      note.triggered = true;
+
+      let outputName = drumMap[note.midi];
+      let level = getVelocityLevel(note.velocity);
+
+      setDrumOutput(outputName, level);
+    }
+  }
+}
+
+function resetDrumOutputs() {
+  bassKick = "off";
+  rimshot = "off";
+  snareDrum = "off";
+  handclap = "off";
+  congaLow = "off";
+  timbale = "off";
+  closedHihat = "off";
+  congaHigh = "off";
+  tomLow = "off";
+  tomMid = "off";
+  openHihat = "off";
+  tomHigh = "off";
+  cowbellLow = "off";
+  crashCymbal = "off";
+  cowbellHigh = "off";
+  rideCymbal = "off";
+}
+
+
+function getVelocityLevel(velocity) {
+  if (velocity < 0.33) {
+    return "low";
+  } else {
+    return "high";
+  }
+}
+
+function setDrumOutput(outputName, level) {
+  if (outputName === "bassKick") bassKick = level;
+  if (outputName === "rimshot") rimshot = level;
+  if (outputName === "snareDrum") snareDrum = level;
+  if (outputName === "handclap") handclap = level;
+  if (outputName === "congaLow") congaLow = level;
+  if (outputName === "timbale") timbale = level;
+  if (outputName === "closedHihat") closedHihat = level;
+  if (outputName === "congaHigh") congaHigh = level;
+  if (outputName === "tomLow") tomLow = level;
+  if (outputName === "tomMid") tomMid = level;
+  if (outputName === "openHihat") openHihat = level;
+  if (outputName === "tomHigh") tomHigh = level;
+  if (outputName === "cowbellLow") cowbellLow = level;
+  if (outputName === "crashCymbal") crashCymbal = level;
+  if (outputName === "cowbellHigh") cowbellHigh = level;
+  if (outputName === "rideCymbal") rideCymbal = level;
+}

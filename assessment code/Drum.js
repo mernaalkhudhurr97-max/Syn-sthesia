@@ -124,7 +124,7 @@ function resetDrumOutputs() {
   rideCymbal = "off";
 }
 
-// This was missing
+
 function getVelocityLevel(velocity) {
   if (velocity < 0.33) {
     return "low";
