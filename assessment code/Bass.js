@@ -77,9 +77,6 @@ function loadBassMidiFile(path, index) {
         notes: notes
       };
     })
-    .catch(function(error) {
-      console.error("Error loading MIDI file:", error);
-    });
 }
 
 
@@ -125,21 +122,64 @@ function getActiveBassHits() {
 
 
 // --------------------------------------------------
-// PLAY CURRENT BASS TRACK FROM THE START
+// soo silly of course bass has to all play at the same time otherwise it isnt in time. 
 // --------------------------------------------------
 
 function playBass() {
-  stopAllBassAudio();
-  resetBassMidiTriggers(activeBassTrack);
+  for (let i = 0; i < bassSongs.length; i++) {
+    bassSongs[i].stop();
+  }
 
-  bassSongs[activeBassTrack].setVolume(1);
-  bassSongs[activeBassTrack].play();
+  resetAllBassMidiTriggers();
+  setBassVolumes();
+
+  for (let i = 0; i < bassSongs.length; i++) {
+    bassSongs[i].play();
+  }
 
   bassIsPlaying = true;
-  if (!bassMuted) {
-    bassSongs[activeBassTrack].setVolume(1);
-    bassSongs[activeBassTrack].play();
+}
+
+function pauseBass() {
+  for (let i = 0; i < bassSongs.length; i++) {
+    bassSongs[i].pause();
   }
+
+  bassIsPlaying = false;
+}
+
+
+function getActiveBassHits() {
+  let hits = [];
+
+  if (!bassIsPlaying || bassMuted) {
+    return hits;
+  }
+
+  let midi = bassMidiTracks[activeBassTrack];
+
+  if (!midi) {
+    return hits;
+  }
+
+   let currentTime = getBassCurrentTime();
+
+  for (let note of midi.notes) {
+    if (!note.triggered && currentTime >= note.time) {
+      note.triggered = true;
+      hits.push(note);
+    }
+  }
+
+  return hits;
+} 
+
+function getBassCurrentTime() {
+  if (bassSongs[activeBassTrack] && bassSongs[activeBassTrack].isPlaying()) {
+    return bassSongs[activeBassTrack].currentTime();
+  }
+
+  return 0;
 }
 
 // silly me forgot that it has to mute as well play nothign 
