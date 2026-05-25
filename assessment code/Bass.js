@@ -95,7 +95,7 @@ let bassMap = {
 
 
 
-// Loads a MIDI file and extracts drum notes.
+
 function loadMidiFile(path) {
   fetch(path)
     .then(function(response) {
@@ -106,7 +106,7 @@ function loadMidiFile(path) {
 
       for (let track of midiData.tracks) {
         for (let note of track.notes) {
-          if (note.midi >= 36 && note.midi <= 51) {
+          if (note.midi >= 33 && note.midi <= 57) {
             allMidiNotes.push({
               midi: note.midi,
               time: note.time,
@@ -122,38 +122,48 @@ function loadMidiFile(path) {
 }
 
 function updateMusicOutputs(currentTime) {
-  resetDrumOutputs();
+  resetBassOutputs();
 
   for (let note of allMidiNotes) {
     if (!note.triggered && currentTime >= note.time) {
       note.triggered = true;
 
-      let outputName = drumMap[note.midi];
+      let outputName = bassMap[note.midi];
       let level = getVelocityLevel(note.velocity);
 
-      setDrumOutput(outputName, level);
+      setBassOutput(outputName, level);
     }
   }
 }
 
-function resetDrumOutputs() {
-  bassKick = "off";
-  rimshot = "off";
-  snareDrum = "off";
-  handclap = "off";
-  congaLow = "off";
-  timbale = "off";
-  closedHihat = "off";
-  congaHigh = "off";
-  tomLow = "off";
-  tomMid = "off";
-  openHihat = "off";
-  tomHigh = "off";
-  cowbellLow = "off";
-  crashCymbal = "off";
-  cowbellHigh = "off";
-  rideCymbal = "off";
+function resetBassOutputs() {
+  A1 = "off";
+  As1 = "off";
+  B1 = "off";
+  C2 = "off";
+  Cs2 = "off";
+  D2 = "off";
+  Ds2 = "off";
+  E2 = "off";
+  F2 = "off";
+  Fs2 = "off";
+  G2 = "off";
+  Gs2 = "off";
+  A2 = "off";
+  As2 = "off";
+  B2 = "off";
+  C3 = "off";
+  Cs3 = "off";
+  D3 = "off";
+  Ds3 = "off";
+  E3 = "off";
+  F3 = "off";
+  Fs3 = "off";
+  G3 = "off";
+  Gs3 = "off";
+  A3 = "off";
 }
+
 
 
 function getVelocityLevel(velocity) {
@@ -164,21 +174,30 @@ function getVelocityLevel(velocity) {
   }
 }
 
-function setDrumOutput(outputName, level) {
-  if (outputName === "bassKick") bassKick = level;
-  if (outputName === "rimshot") rimshot = level;
-  if (outputName === "snareDrum") snareDrum = level;
-  if (outputName === "handclap") handclap = level;
-  if (outputName === "congaLow") congaLow = level;
-  if (outputName === "timbale") timbale = level;
-  if (outputName === "closedHihat") closedHihat = level;
-  if (outputName === "congaHigh") congaHigh = level;
-  if (outputName === "tomLow") tomLow = level;
-  if (outputName === "tomMid") tomMid = level;
-  if (outputName === "openHihat") openHihat = level;
-  if (outputName === "tomHigh") tomHigh = level;
-  if (outputName === "cowbellLow") cowbellLow = level;
-  if (outputName === "crashCymbal") crashCymbal = level;
-  if (outputName === "cowbellHigh") cowbellHigh = level;
-  if (outputName === "rideCymbal") rideCymbal = level;
+function setBassOutput(outputName, level) {
+  if (outputName === "A1") A1 = level;
+  if (outputName === "As1") As1 = level;
+  if (outputName === "B1") B1 = level;
+  if (outputName === "C2") C2 = level;
+  if (outputName === "Cs2") Cs2 = level;
+  if (outputName === "D2") D2 = level;
+  if (outputName === "Ds2") Ds2 = level;
+  if (outputName === "E2") E2 = level;
+  if (outputName === "F2") F2 = level;
+  if (outputName === "Fs2") Fs2 = level;
+  if (outputName === "G2") G2 = level;
+  if (outputName === "Gs2") Gs2 = level;
+  if (outputName === "A2") A2 = level;
+  if (outputName === "As2") As2 = level;
+  if (outputName === "B2") B2 = level;
+  if (outputName === "C3") C3 = level;
+  if (outputName === "Cs3") Cs3 = level;
+  if (outputName === "D3") D3 = level;
+  if (outputName === "Ds3") Ds3 = level;
+  if (outputName === "E3") E3 = level;
+  if (outputName === "F3") F3 = level;
+  if (outputName === "Fs3") Fs3 = level;
+  if (outputName === "G3") G3 = level;
+  if (outputName === "Gs3") Gs3 = level;
+  if (outputName === "A3") A3 = level;
 }
