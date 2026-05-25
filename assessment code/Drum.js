@@ -66,13 +66,10 @@ function loadDrumMidiFile(path, index) {
         return a.time - b.time;
       });
 
-      DrumMidiTracks[index] = {
+      drumMidiTracks[index] = {
         notes: notes
       };
     })
-    .catch(function(error) {
-      console.error("Error loading MIDI file:", error);
-    });
 }
 
 
@@ -86,28 +83,82 @@ function drumTicksToSeconds(ticks, ppq, bpm) {
 }
 
 
-// --------------------------------------------------
-// RETURN NEW NOTES FROM THE ACTIVE DRUM TRACK
-// --------------------------------------------------
+
+
+
+function playDrum() {
+  for (let i = 0; i < drumSongs.length; i++) {
+    drumSongs[i].stop();
+  }
+
+  resetAllDrumMidiTriggers();
+  setDrumVolumes();
+
+  for (let i = 0; i < drumSongs.length; i++) {
+    drumSongs[i].play();
+  }
+
+  drumIsPlaying = true;
+}
+
+function pauseDrum() {
+  for (let i = 0; i < drumSongs.length; i++) {
+    drumSongs[i].pause();
+  }
+
+  drumIsPlaying = false;
+}
+
+
+function setDrumVolumes() {
+  for (let i = 0; i < drumSongs.length; i++) {
+    if (DrumMuted) {
+      drumSongs[i].setVolume(0, drumFadeTime);
+    } else if (i === activeDrumTrack) {
+      drumSongs[i].setVolume(1, drumFadeTime);
+    } else {
+      drumSongs[i].setVolume(0, drumFadeTime);
+    }
+  }
+}
+
+
+function switchDrumTrack(newTrack) {
+  activeDrumTrack = newTrack;
+  DrumMuted = false;
+
+  setDrumVolumes();
+
+  resetAllDrumMidiTriggers();
+  syncAllDrumMidiToCurrentTime();
+}
+
+
+function muteDrum() {
+  DrumMuted = true;
+
+  setDrumVolumes();
+
+  resetAllDrumMidiTriggers();
+  syncAllDrumMidiToCurrentTime();
+}
 
 function getActiveDrumHits() {
   let hits = [];
 
-  if (DrumMuted) {
+  if (!drumIsPlaying || DrumMuted) {
     return hits;
   }
 
-  if (!DrumMidiTracks[activeDrumTrack]) {
+  let midi = drumMidiTracks[activeDrumTrack];
+
+  if (!midi) {
     return hits;
   }
 
-  if (!DrumSongs[activeDrumTrack].isPlaying()) {
-    return hits;
-  }
+   let currentTime = getDrumCurrentTime();
 
-  let currentTime = DrumSongs[activeDrumTrack].currentTime();
-
-  for (let note of DrumMidiTracks[activeDrumTrack].notes) {
+  for (let note of midi.notes) {
     if (!note.triggered && currentTime >= note.time) {
       note.triggered = true;
       hits.push(note);
@@ -115,144 +166,49 @@ function getActiveDrumHits() {
   }
 
   return hits;
+} 
+
+function getDrumCurrentTime() {
+  if (
+    drumSongs[activeDrumTrack] &&
+    drumSongs[activeDrumTrack].isPlaying()
+  ) {
+    return drumSongs[activeDrumTrack].currentTime();
+  }
+
+  return 0;
 }
 
-
-// --------------------------------------------------
-// PLAY CURRENT DRUM TRACK FROM THE START
-// --------------------------------------------------
-
-function playDrum() {
-  stopAllDrumAudio();
-  resetDrumMidiTriggers(activeDrumTrack);
-
-  DrumSongs[activeDrumTrack].setVolume(1);
-  DrumSongs[activeDrumTrack].play();
-
-  DrumIsPlaying = true;
-
-  if (!DrumMuted) {
-    DrumSongs[activeDrumTrack].setVolume(1);
-    DrumSongs[activeDrumTrack].play();
-  }
-}
-
-
-function muteDrum() {
-  DrumMuted = true;
-
-  let oldSong = DrumSongs[activeDrumTrack];
-
-  if (oldSong && oldSong.isPlaying()) {
-    oldSong.setVolume(0, DrumFadeTime);
-    
-    setTimeout(function() { 
-      if (DrumMuted) {
-        oldSong.stop();
-        oldSong.setVolume(1);
-      }
-    }, DrumFadeTime * 1000 + 20);
-  }
-}
-
-// --------------------------------------------------
-// PAUSE CURRENT DRUM TRACK
-// --------------------------------------------------
-
-function pauseDrum() {
-  if (DrumSongs[activeDrumTrack].isPlaying()) {
-    DrumSongs[activeDrumTrack].pause();
-  }
-
-  DrumIsPlaying = false;
-}
-
-
-// --------------------------------------------------
-// SWITCH TRACK WITH CROSSFADE before it clicked which was obvouis but didnt think about it beofre maybe do a longer cross fade time or something to make it more noticeable
-// --------------------------------------------------
-
-function switchDrumTrack(newTrack) {
-  if (newTrack === activeDrumTrack) {
-    return;
-  }
-
-  let currentTime = 0;
-
-  if (DrumMuted && DrumSongs[activeDrumTrack] && DrumSongs[activeDrumTrack].isPlaying()) {
-    currentTime = DrumSongs[activeDrumTrack].currentTime();
-  } else if (BassSongs[activeBassTrack]) {
-    currentTime = BassSongs[activeBassTrack].currentTime();
-  }
-
-  let oldSong = DrumSongs[activeDrumTrack];
-  let newSong = DrumSongs[newTrack];
-
-  
-  let wasPlaying = DrumIsPlaying;
-
-  activeDrumTrack = newTrack;
-
-  resetDrumMidiTriggers(activeDrumTrack);
-  syncDrumMidiToCurrentTime(activeDrumTrack, currentTime);
-
-  if (wasPlaying) {
-    newSong.stop();
-    newSong.setVolume(0);
-    newSong.play(0, 1, 0, currentTime);
-
-    newSong.setVolume(1, drumFadeTime);
-    oldSong.setVolume(0, drumFadeTime);
-
-    setTimeout(function() {
-      if (oldSong !== DrumSongs[activeDrumTrack]) {
-        oldSong.stop();
-        oldSong.setVolume(1);
-      }
-    }, drumFadeTime * 1000 + 20);
-  }
-}
-
-
-// --------------------------------------------------
-// STOP ALL DRUM AUDIO
-// --------------------------------------------------
-
-function stopAllDrumAudio() {
-  for (let song of DrumSongs) {
-    if (song) {
-      song.stop();
-      song.setVolume(1);
-    }
-  }
-}
 
 
 // --------------------------------------------------
 // RESET MIDI TRIGGERS
 // --------------------------------------------------
 
-function resetDrumMidiTriggers(trackIndex) {
-  if (!DrumMidiTracks[trackIndex]) {
-    return;
-  }
-
-  for (let note of DrumMidiTracks[trackIndex].notes) {
-    note.triggered = false;
+function resetAllDrumMidiTriggers() {
+  for (let t = 0; t < drumMidiTracks.length; t++) {
+    if (drumMidiTracks[t]) {
+      for (let note of drumMidiTracks[t].notes) {
+        note.triggered = false;
+      }
+    }
   }
 }
 
 
 // --------------------------------------------------
-// SKIP NOTES THAT HAPPENED BEFORE A TRACK SWITCH
+// SYNC ALL MIDI TRACKS TO THE CURRENT AUDIO TIME
+// Prevents old notes suddenly triggering after a switch.
 // --------------------------------------------------
 
-function syncDrumMidiToCurrentTime(trackIndex, currentTime) {
-  if (!DrumMidiTracks[trackIndex]) {
-    return;
-  }
+function syncAllDrumMidiToCurrentTime() {
+  let currentTime = getDrumCurrentTime();
 
-  for (let note of DrumMidiTracks[trackIndex].notes) {
-    note.triggered = note.time < currentTime;
+  for (let t = 0; t < DrumMidiTracks.length; t++) {
+    if (drumMidiTracks[t]) {
+      for (let note of drumMidiTracks[t].notes) {
+        note.triggered = note.time < currentTime;
+      }
+    }
   }
 }

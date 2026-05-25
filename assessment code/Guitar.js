@@ -26,11 +26,11 @@ function setup() {
 }
 
 
-//--------------------------------------------------
+// --------------------------------------------------
 // LOAD MIDI DATA
 // --------------------------------------------------
 
-function loadGuitarMidiFile(path, index) {
+function loadBassMidiFile(path, index) {
   fetch(path)
     .then(function(response) {
       if (!response.ok) {
@@ -50,7 +50,7 @@ function loadGuitarMidiFile(path, index) {
           notes.push({
             midi: note.midi,
             name: note.name,
-            time: guitarTicksToSeconds(note.ticks, ppq, guitarBPM),
+            time: bassTicksToSeconds(note.ticks, ppq, bassBPM),
             velocity: note.velocity,
             triggered: false
           });
@@ -61,13 +61,10 @@ function loadGuitarMidiFile(path, index) {
         return a.time - b.time;
       });
 
-      GuitarMidiTracks[index] = {
+      bassMidiTracks[index] = {
         notes: notes
       };
     })
-    .catch(function(error) {
-      console.error("Error loading MIDI file:", error);
-    });
 }
 
 
@@ -75,34 +72,91 @@ function loadGuitarMidiFile(path, index) {
 // FORCE MIDI TIMING TO 160 BPM
 // --------------------------------------------------
 
-function guitarTicksToSeconds(ticks, ppq, bpm) {
+function bassTicksToSeconds(ticks, ppq, bpm) {
   let beats = ticks / ppq;
   return beats * (60 / bpm);
 }
 
 
+
+
 // --------------------------------------------------
-// RETURN NEW NOTES FROM THE ACTIVE GUITAR TRACK
+// soo silly of course bass has to all play at the same time otherwise it isnt in time. 
 // --------------------------------------------------
 
-function getActiveGuitarHits() {
+function playBass() {
+  for (let i = 0; i < bassSongs.length; i++) {
+    bassSongs[i].stop();
+  }
+
+  resetAllBassMidiTriggers();
+  setBassVolumes();
+
+  for (let i = 0; i < bassSongs.length; i++) {
+    bassSongs[i].play();
+  }
+
+  bassIsPlaying = true;
+}
+
+function pauseBass() {
+  for (let i = 0; i < bassSongs.length; i++) {
+    bassSongs[i].pause();
+  }
+
+  bassIsPlaying = false;
+}
+
+
+function setBassVolumes() {
+  for (let i = 0; i < bassSongs.length; i++) {
+    if (bassMuted) {
+      bassSongs[i].setVolume(0, bassFadeTime);
+    } else if (i === activeBassTrack) {
+      bassSongs[i].setVolume(1, bassFadeTime);
+    } else {
+      bassSongs[i].setVolume(0, bassFadeTime);
+    }
+  }
+}
+
+
+function switchBassTrack(newTrack) {
+  activeBassTrack = newTrack;
+  bassMuted = false;
+
+  setBassVolumes();
+
+  resetAllBassMidiTriggers();
+  syncAllBassMidiToCurrentTime();
+}
+
+
+function muteBass() {
+  bassMuted = true;
+
+  setBassVolumes();
+
+  resetAllBassMidiTriggers();
+  syncAllBassMidiToCurrentTime();
+}
+
+function getActiveBassHits() {
   let hits = [];
 
-  if (GuitarMuted) {
+  if (!bassIsPlaying || bassMuted) {
     return hits;
   }
 
-  if (!GuitarMidiTracks[activeGuitarTrack]) {
+  let midi = bassMidiTracks[activeBassTrack];
+
+  if (!midi) {
     return hits;
   }
 
-  if (!GuitarSongs[activeGuitarTrack].isPlaying()) {
-    return hits;
-  }
+   let currentTime = getBassCurrentTime();
 
-  let currentTime = GuitarSongs[activeGuitarTrack].currentTime();
-
-  for (let note of GuitarMidiTracks[activeGuitarTrack].notes) {
+  for (let note of midi.notes) {
     if (!note.triggered && currentTime >= note.time) {
       note.triggered = true;
       hits.push(note);
@@ -110,143 +164,49 @@ function getActiveGuitarHits() {
   }
 
   return hits;
+} 
+
+function getBassCurrentTime() {
+  if (
+    bassSongs[activeBassTrack] &&
+    bassSongs[activeBassTrack].isPlaying()
+  ) {
+    return bassSongs[activeBassTrack].currentTime();
+  }
+
+  return 0;
 }
 
-
-// --------------------------------------------------
-// PLAY CURRENT GUITAR TRACK FROM THE START
-// --------------------------------------------------
-
-function playGuitar() {
-  stopAllGuitarAudio();
-  resetGuitarMidiTriggers(activeGuitarTrack);
-
-  GuitarSongs[activeGuitarTrack].setVolume(1);
-  GuitarSongs[activeGuitarTrack].play();
-
-  GuitarIsPlaying = true;
-
-  if (!GuitarMuted) {
-    GuitarSongs[activeGuitarTrack].setVolume(1);
-    GuitarSongs[activeGuitarTrack].play();
-  }
-}
-
-
-// --------------------------------------------------
-// PAUSE CURRENT GUITAR TRACK
-// --------------------------------------------------
-
-function pauseGuitar() {
-  if (GuitarSongs[activeGuitarTrack].isPlaying()) {
-    GuitarSongs[activeGuitarTrack].pause();
-  }
-
-  GuitarIsPlaying = false;
-}
-
-
-function muteGuitar() {
-  GuitarMuted = true;
-
-  let oldSong = GuitarSongs[activeGuitarTrack];
-
-  if (oldSong && oldSong.isPlaying()) {
-    oldSong.setVolume(0, GuitarFadeTime);
-
-    setTimeout(function() {
-      if (GuitarMuted) {
-        oldSong.stop();
-        oldSong.setVolume(1);
-      }
-    }, GuitarFadeTime * 1000 + 10);
-  }
-}
-
-// --------------------------------------------------
-// SWITCH TRACK WITH CROSSFADE
-// --------------------------------------------------
-
-function switchGuitarTrack(newTrack) {
-  if (newTrack === activeGuitarTrack) {
-    return;
-  }
-    let currentTime= 0;
-
-   if (GuitarMuted && GuitarSongs[activeGuitarTrack] && GuitarSongs[activeGuitarTrack].isPlaying()) {
-    currentTime = GuitarSongs[activeGuitarTrack].currentTime();
-  } else if (BassSongs[activeBassTrack]) {
-    currentTime = BassSongs[activeBassTrack].currentTime();
-  }
-
-  let oldSong = GuitarSongs[activeGuitarTrack];
-  let newSong = GuitarSongs[newTrack];
-
-  let wasPlaying = GuitarIsPlaying;
-
-
-  activeGuitarTrack = newTrack;
-
-  resetGuitarMidiTriggers(activeGuitarTrack);
-  syncGuitarMidiToCurrentTime(activeGuitarTrack, currentTime);
-
-  if (wasPlaying) {
-    newSong.stop();
-    newSong.setVolume(0);
-    newSong.play(0, 1, 0, currentTime);
-
-    newSong.setVolume(1, guitarFadeTime);
-    oldSong.setVolume(0, guitarFadeTime);
-
-    setTimeout(function() {
-      if (oldSong !== GuitarSongs[activeGuitarTrack]) {
-        oldSong.stop();
-        oldSong.setVolume(1);
-      }
-    }, guitarFadeTime * 1000 + 10);
-  }
-}
-
-
-// --------------------------------------------------
-// STOP ALL GUITAR AUDIO
-// --------------------------------------------------
-
-function stopAllGuitarAudio() {
-  for (let song of GuitarSongs) {
-    if (song) {
-      song.stop();
-      song.setVolume(1);
-    }
-  }
-}
 
 
 // --------------------------------------------------
 // RESET MIDI TRIGGERS
 // --------------------------------------------------
 
-function resetGuitarMidiTriggers(trackIndex) {
-  if (!GuitarMidiTracks[trackIndex]) {
-    return;
-  }
-
-  for (let note of GuitarMidiTracks[trackIndex].notes) {
-    note.triggered = false;
+function resetAllBassMidiTriggers() {
+  for (let t = 0; t < bassMidiTracks.length; t++) {
+    if (bassMidiTracks[t]) {
+      for (let note of bassMidiTracks[t].notes) {
+        note.triggered = false;
+      }
+    }
   }
 }
 
 
 // --------------------------------------------------
-// SKIP NOTES THAT HAPPENED BEFORE A TRACK SWITCH
+// SYNC ALL MIDI TRACKS TO THE CURRENT AUDIO TIME
+// Prevents old notes suddenly triggering after a switch.
 // --------------------------------------------------
 
-function syncGuitarMidiToCurrentTime(trackIndex, currentTime) {
-  if (!GuitarMidiTracks[trackIndex]) {
-    return;
-  }
+function syncAllBassMidiToCurrentTime() {
+  let currentTime = getBassCurrentTime();
 
-  for (let note of GuitarMidiTracks[trackIndex].notes) {
-    note.triggered = note.time < currentTime;
+  for (let t = 0; t < bassMidiTracks.length; t++) {
+    if (bassMidiTracks[t]) {
+      for (let note of bassMidiTracks[t].notes) {
+        note.triggered = note.time < currentTime;
+      }
+    }
   }
 }
