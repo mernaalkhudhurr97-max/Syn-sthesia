@@ -3,25 +3,26 @@
 // --------------------------------------------------
 
 let activeBassNote = "Click to play";
-let activeBassLevel = "off";
+let activeBassMidi = "-";
+let activeBassVelocity = "off";
 
-let circleSize = 100;
-let circleTargetSize = 100;
+let circleSize = 120;
+let targetCircleSize = 120;
 let visualHoldFrames = 0;
 
-let bassStarted = false;
+let bgValue = 20;
 
 
 // --------------------------------------------------
-// P5 LOAD AND SETUP
+// P5 PRELOAD AND SETUP
 // --------------------------------------------------
 
 function preload() {
-  BassSounds();
+  preloadBassInputs();
 }
 
 function setup() {
-  createCanvas(800, 600);
+  createCanvas(windowWidth, windowHeight);
   textAlign(CENTER, CENTER);
 
   setupBassInputs();
@@ -33,81 +34,130 @@ function setup() {
 // --------------------------------------------------
 
 function draw() {
-  background(20);
+  background(bgValue);
 
-  if (bassStarted && BassSounds[0].isPlaying()) {
-    updateBassOutputs(BassSounds[0].currentTime());
-    checkBassVisualOutput();
+  if (bassIsPlaying) {
+    let hits = getActiveBassHits();
+
+    for (let note of hits) {
+      triggerBassVisual(note);
+    }
   }
 
   if (visualHoldFrames > 0) {
     visualHoldFrames--;
   } else {
-    circleTargetSize = 100;
+    targetCircleSize = 120;
+    bgValue = lerp(bgValue, 20, 0.15);
   }
 
-  circleSize = lerp(circleSize, circleTargetSize, 0.18);
+  circleSize = lerp(circleSize, targetCircleSize, 0.18);
 
   noStroke();
   fill(255);
   ellipse(width / 2, height / 2, circleSize, circleSize);
 
-  fill(255);
-
-  textSize(30);
-  text(activeBassNote, width / 2, 120);
+  textSize(32);
+  text(activeBassNote, width / 2, height / 2 - 190);
 
   textSize(18);
-  text("Velocity: " + activeBassLevel, width / 2, 160);
+  text(
+    "Active Bass Track: " + (activeBassTrack + 1),
+    width / 2,
+    height / 2 - 145
+  );
 
-  textSize(16);
-  text("Click anywhere to play Bass 1", width / 2, height - 45);
+  text(
+    "MIDI number: " + activeBassMidi,
+    width / 2,
+    height / 2 + 175
+  );
+
+  text(
+    "Velocity: " + activeBassVelocity,
+    width / 2,
+    height / 2 + 205
+  );
+
+  textSize(15);
+  text(
+    "Click = play / pause   |   Keys 1–4 = switch bass track",
+    width / 2,
+    height - 42
+  );
 }
 
 
 // --------------------------------------------------
-// PLAY BASS TRACK ON CLICK
+// CLICK TO PLAY OR PAUSE
 // --------------------------------------------------
 
 function mousePressed() {
   userStartAudio();
 
-  for (let note of allBassMidiNotes) {
-    note.triggered = false;
+  if (bassIsPlaying) {
+    pauseBass();
+    activeBassNote = "Paused";
+  } else {
+    playBass();
+    activeBassNote = "Playing Bass Track " + (activeBassTrack + 1);
   }
-
-  resetBassOutputs();
-
-  activeBassNote = "Listening...";
-  activeBassLevel = "off";
-
-  circleSize = 100;
-  circleTargetSize = 100;
-
-  BassSounds[0].stop();
-  BassSounds[0].play();
-
-  bassStarted = true;
 }
 
 
 // --------------------------------------------------
-// CONNECT BASS OUTPUTS TO VISUAL
+// SWITCH BETWEEN BASS TRACKS
 // --------------------------------------------------
 
-function checkBassVisualOutput() {
-  for (let noteName in bassNotes) {
-    if (bassNotes[noteName] !== "off") {
-      activeBassNote = noteName;
-      activeBassLevel = bassNotes[noteName];
-
-      if (bassNotes[noteName] === "high") {
-        circleTargetSize = 300;
-      } else {
-        circleTargetSize = 190;
-      }
-
-      visualHoldFrames = 12;
-    }
+function keyPressed() {
+  if (key === "1") {
+    switchBassTrack(0);
+    activeBassNote = "Bass Track 1";
   }
+
+  if (key === "2") {
+    switchBassTrack(1);
+    activeBassNote = "Bass Track 2";
+  }
+
+  if (key === "3") {
+    switchBassTrack(2);
+    activeBassNote = "Bass Track 3";
+  }
+
+  if (key === "4") {
+    switchBassTrack(3);
+    activeBassNote = "Bass Track 4";
+  }
+}
+
+
+// --------------------------------------------------
+// VISUAL REACTION TO EACH BASS NOTE
+// --------------------------------------------------
+
+function triggerBassVisual(note) {
+  activeBassNote = note.name;
+  activeBassMidi = note.midi;
+
+  if (note.velocity < 0.33) {
+    activeBassVelocity = "low";
+    targetCircleSize = 220;
+    bgValue = 55;
+  } else {
+    activeBassVelocity = "high";
+    targetCircleSize = 380;
+    bgValue = 95;
+  }
+
+  visualHoldFrames = 12;
+}
+
+
+// --------------------------------------------------
+// RESPONSIVE CANVAS
+// --------------------------------------------------
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }
