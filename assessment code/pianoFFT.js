@@ -1,6 +1,6 @@
 
-let snythFFT1Sounds = [];
-let snythFFT2Sounds = [];
+let snythFFT1Sound = [];
+let snythFFT2Sound = [];
 
 
 
@@ -8,8 +8,9 @@ let synthFFT1;
 let synthFFT2;
 
 let synthFFTIsPlaying = false;
-let smoothing = 0.8;
-let numbins = 1024;
+
+let snythsmoothing = 0.8;
+let synthBins = 1024;
 
 
 
@@ -43,10 +44,10 @@ let synth2HighEnergy = 0;
 
 
 
-function preload() {
+function preloadSynthFFTInputs() {
   
-  snythFFT1Sounds = loadSound("assets/SnythFFT1/SnythFFT1.wav");
-  snythFFT2Sounds = loadSound("assets/SnythFFT2/SnythFFT2.wav");
+  snythFFT1Sound = loadSound("assets/SnythWAV/SnythFFT1.wav");
+  snythFFT2Sound = loadSound("assets/SnythWAV/SnythFFT2.wav");
  
 }
 
@@ -56,12 +57,13 @@ function preload() {
 
 function setupSnythFFTinputs() {
 
-synthFFt1 = new p5.FFT(smoothing,numbins);
-synthFFt2 = new p5.FFT(smoothing,numbins);
+synthFFT1 = new p5.FFT(snythsmoothing,synthBins);
+synthFFT2 = new p5.FFT(snythsmoothing,synthBins);
 
-synthFFt1.setInput(snythFFT1Sounds);
-synthFFt2.setInput(snythFFT2Sounds);
+synthFFT1.setInput(snythFFT1Sound);
+synthFFT2.setInput(snythFFT2Sound);
 
+resetSynthFFTOutputs();
 }
 
 
@@ -69,21 +71,27 @@ synthFFt2.setInput(snythFFT2Sounds);
 
 
 function playSynthFFT() {
-  snythFFT1Sounds.stop();
-  snythFFT2Sounds.stop();
+  snythFFT1Sound.stop();
+  snythFFT2Sound.stop();
 
-  snythFFT1Sounds.play();
-  snythFFT2Sounds.play();
+  snythFFT1Sound.play();
+  snythFFT2Sound.play();
+
   synthFFTIsPlaying = true;
 }
   
 
 function pauseSynthFFT() {
-    snythFFT1Sounds.pause();
-    snythFFT2Sounds.pause();
+    if (snythFFT1Sound.pause()) {
+      snythFFT1Sound.pause();
+    }
+    if (snythFFT2Sound.pause()) {
+      snythFFT2Sound.pause();
+    }
 
   synthFFTIsPlaying = false;
 }
+
 
 
 function updateSynthFFTOutputs() {
