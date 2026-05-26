@@ -6,7 +6,8 @@
 // Drums   = Q W E R / T off
 // Guitar  = A on / S off
 // Strings = Z X C V / B off
-// Mouse   = play / pause all available instruments
+// Synths  = always play with the full track
+// Mouse   = play / pause all instruments
 // --------------------------------------------------
 
 
@@ -32,10 +33,12 @@ let bgValue = 15;
 let bgTarget = 15;
 let shakeAmount = 0;
 
+let synth1RingRotation = 0;
+let synth2RingRotation = 0;
+
 
 // --------------------------------------------------
 // P5 PRELOAD
-// Loads only instruments whose functions currently exist.
 // --------------------------------------------------
 
 function preload() {
@@ -53,6 +56,11 @@ function preload() {
 
   if (typeof preloadStringsInputs === "function") {
     preloadStringsInputs();
+  }
+
+  // Load both continuous synth FFT audio layers
+  if (typeof preloadSynthFFTInputs === "function") {
+    preloadSynthFFTInputs();
   }
 }
 
@@ -83,6 +91,11 @@ function setup() {
   if (typeof setupStringsInputs === "function") {
     setupStringsInputs();
   }
+
+  // Create and connect both synth FFT analysers
+  if (typeof setupSynthFFTInputs === "function") {
+    setupSynthFFTInputs();
+  }
 }
 
 
@@ -95,6 +108,12 @@ function draw() {
 
   if (musicIsPlaying) {
     checkAllMusicHits();
+
+    // Updates synth1Spectrum, synth2Spectrum,
+    // centroid values and frequency energy values.
+    if (typeof updateSynthFFTOutputs === "function") {
+      updateSynthFFTOutputs();
+    }
   }
 
   bgValue = lerp(bgValue, bgTarget, 0.18);
@@ -109,6 +128,9 @@ function draw() {
     random(-shakeAmount, shakeAmount)
   );
 
+  // Continuous FFT rings behind your event-triggered visuals
+  drawSynthOuterVisual();
+
   drawCentreGuide();
   drawVisualHits();
 
@@ -119,7 +141,7 @@ function draw() {
 
 
 // --------------------------------------------------
-// CHECK MIDI HITS FROM ALL AVAILABLE INSTRUMENTS
+// CHECK MIDI HITS FROM EXISTING INSTRUMENTS
 // --------------------------------------------------
 
 function checkAllMusicHits() {
@@ -162,7 +184,7 @@ function checkAllMusicHits() {
 
 
 // --------------------------------------------------
-// CLICK TO PLAY OR PAUSE ALL AVAILABLE INSTRUMENTS
+// CLICK TO PLAY OR PAUSE EVERYTHING
 // --------------------------------------------------
 
 function mousePressed() {
@@ -185,6 +207,10 @@ function mousePressed() {
       pauseStrings();
     }
 
+    if (typeof pauseSynthFFT === "function") {
+      pauseSynthFFT();
+    }
+
     musicIsPlaying = false;
   } else {
     if (typeof playBass === "function") {
@@ -201,6 +227,11 @@ function mousePressed() {
 
     if (typeof playStrings === "function") {
       playStrings();
+    }
+
+    // Both synth sounds start and remain playing continuously
+    if (typeof playSynthFFT === "function") {
+      playSynthFFT();
     }
 
     musicIsPlaying = true;
@@ -321,6 +352,170 @@ function keyPressed() {
 
 
 // --------------------------------------------------
+// SYNTH FFT OUTER VISUAL
+//
+// Synth 1 = cyan outer spectral ring
+// Synth 2 = pink inner spectral ring
+//
+// Spectrum controls the uneven moving ring edge.
+// Centroid controls rotation speed.
+// Frequency energy controls ring size and glow.
+// --------------------------------------------------
+
+function drawSynthOuterVisual() {
+  if (
+    typeof synth1Spectrum === "undefined" ||
+    typeof synth2Spectrum === "undefined"
+  ) {
+    return;
+  }
+
+  if (
+    typeof synth1CentroidFreq === "undefined" ||
+    typeof synth2CentroidFreq === "undefined"
+  ) {
+    return;
+  }
+
+  let centreX = width / 2;
+  let centreY = height / 2;
+
+  let availableRadius = min(width, height) * 0.34;
+
+  // Synth 1 responds more to its mid and high-frequency content.
+  let synth1Energy =
+    typeof synth1MidEnergy !== "undefined"
+      ? synth1MidEnergy + synth1HighEnergy
+      : 0;
+
+  // Synth 2 responds more to low-mid and presence energy.
+  let synth2Energy =
+    typeof synth2LowMidEnergy !== "undefined"
+      ? synth2LowMidEnergy + synth2PresenceEnergy
+      : 0;
+
+  let synth1Pulse = map(synth1Energy, 0, 510, 0, 42, true);
+  let synth2Pulse = map(synth2Energy, 0, 510, 0, 38, true);
+
+  let synth1Radius = availableRadius + synth1Pulse;
+  let synth2Radius = availableRadius - 48 + synth2Pulse;
+
+  // The brighter the synth sound, the faster the ring slowly turns.
+  let synth1Speed = map(
+    constrain(synth1CentroidFreq, 0, 8000),
+    0,
+    8000,
+    0.001,
+    0.012
+  );
+
+  let synth2Speed = map(
+    constrain(synth2CentroidFreq, 0, 8000),
+    0,
+    8000,
+    0.001,
+    0.014
+  );
+
+  if (musicIsPlaying) {
+    synth1RingRotation += synth1Speed;
+    synth2RingRotation -= synth2Speed;
+  }
+
+  // Soft atmospheric outer glow
+  noFill();
+
+  stroke(80, 220, 255, 24 + synth1Pulse * 1.4);
+  strokeWeight(12);
+  ellipse(centreX, centreY, synth1Radius * 2, synth1Radius * 2);
+
+  stroke(255, 90, 220, 20 + synth2Pulse * 1.4);
+  strokeWeight(10);
+  ellipse(centreX, centreY, synth2Radius * 2, synth2Radius * 2);
+
+  // Detailed moving FFT rings
+  drawSpectrumRing(
+    synth1Spectrum,
+    centreX,
+    centreY,
+    synth1Radius,
+    42,
+    synth1RingRotation,
+    80,
+    220,
+    255
+  );
+
+  drawSpectrumRing(
+    synth2Spectrum,
+    centreX,
+    centreY,
+    synth2Radius,
+    35,
+    synth2RingRotation,
+    255,
+    90,
+    220
+  );
+}
+
+
+// --------------------------------------------------
+// DRAW ONE FFT SPECTRUM AS A CIRCULAR RING
+// --------------------------------------------------
+
+function drawSpectrumRing(
+  spectrum,
+  centreX,
+  centreY,
+  baseRadius,
+  movementAmount,
+  rotationAmount,
+  red,
+  green,
+  blue
+) {
+  if (!spectrum || spectrum.length === 0) {
+    return;
+  }
+
+  push();
+
+  translate(centreX, centreY);
+  rotate(rotationAmount);
+
+  noFill();
+  stroke(red, green, blue, 200);
+  strokeWeight(2);
+
+  beginShape();
+
+  // Use the lower half of the spectrum because it carries
+  // most of the visible musical movement.
+  let usableBins = min(spectrum.length, 512);
+  let step = max(1, floor(usableBins / 90));
+
+  for (let i = 0; i < usableBins; i += step) {
+    let angle = map(i, 0, usableBins, 0, TWO_PI);
+
+    let amplitude = spectrum[i];
+    let extraRadius = map(amplitude, 0, 255, 0, movementAmount);
+
+    let radius = baseRadius + extraRadius;
+
+    let x = cos(angle) * radius;
+    let y = sin(angle) * radius;
+
+    curveVertex(x, y);
+  }
+
+  endShape(CLOSE);
+
+  pop();
+}
+
+
+// --------------------------------------------------
 // BASS VISUAL
 // Large central circular pulse
 // --------------------------------------------------
@@ -339,7 +534,7 @@ function createBassVisual(note) {
 
 // --------------------------------------------------
 // DRUM VISUAL
-// Sharp impact squares and screen shake
+// Sharp impact square and screen shake
 // --------------------------------------------------
 
 function createDrumVisual(note) {
