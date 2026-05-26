@@ -9,7 +9,7 @@ let synthFFT2;
 
 let synthFFTIsPlaying = false;
 
-let snythsmoothing = 0.8;
+let snythSmoothing = 0.8;
 let synthBins = 1024;
 
 
@@ -46,8 +46,8 @@ let synth2HighEnergy = 0;
 
 function preloadSynthFFTInputs() {
   
-  snythFFT1Sound = loadSound("assets/SnythWAV/SnythFFT1.wav");
-  snythFFT2Sound = loadSound("assets/SnythWAV/SnythFFT2.wav");
+  snythFFT1Sound = loadSound("assets/SynthWAV/SynthFFT1.wav");
+  snythFFT2Sound = loadSound("assets/SynthWAV/SynthFFT2.wav");
  
 }
 
@@ -55,10 +55,10 @@ function preloadSynthFFTInputs() {
 /// https://p5js.org/reference/p5.Amplitude/setInput/ ///
 
 
-function setupSnythFFTinputs() {
+function setupSynthFFTInputs() {
 
-synthFFT1 = new p5.FFT(snythsmoothing,synthBins);
-synthFFT2 = new p5.FFT(snythsmoothing,synthBins);
+synthFFT1 = new p5.FFT(snythSmoothing,synthBins);
+synthFFT2 = new p5.FFT(snythSmoothing,synthBins);
 
 synthFFT1.setInput(snythFFT1Sound);
 synthFFT2.setInput(snythFFT2Sound);
