@@ -7,6 +7,18 @@
 // Guitar  = A on / S off
 // Strings = Z X C V / B off
 // Synths  = always play with the full track
+//
+// Vocals:
+// U = Vocal 1 ON
+// I = Vocal 2 ON
+// O = Vocal 3 ON
+//
+// J = Vocal 1 OFF
+// K = Vocal 2 OFF
+// L = Vocal 3 OFF
+//
+// P = all vocals ON/OFF
+//
 // Mouse   = play / pause all instruments
 // --------------------------------------------------
 
@@ -58,9 +70,12 @@ function preload() {
     preloadStringsInputs();
   }
 
-  // Load both continuous synth FFT audio layers
   if (typeof preloadSynthFFTInputs === "function") {
     preloadSynthFFTInputs();
+  }
+
+  if (typeof preloadVocalPitchInputs === "function") {
+    preloadVocalPitchInputs();
   }
 }
 
@@ -92,9 +107,12 @@ function setup() {
     setupStringsInputs();
   }
 
-  // Create and connect both synth FFT analysers
   if (typeof setupSynthFFTInputs === "function") {
     setupSynthFFTInputs();
+  }
+
+  if (typeof setupVocalPitchInputs === "function") {
+    setupVocalPitchInputs();
   }
 }
 
@@ -109,8 +127,6 @@ function draw() {
   if (musicIsPlaying) {
     checkAllMusicHits();
 
-    // Updates synth1Spectrum, synth2Spectrum,
-    // centroid values and frequency energy values.
     if (typeof updateSynthFFTOutputs === "function") {
       updateSynthFFTOutputs();
     }
@@ -128,8 +144,8 @@ function draw() {
     random(-shakeAmount, shakeAmount)
   );
 
-  // Continuous FFT rings behind your event-triggered visuals
   drawSynthOuterVisual();
+  drawVocalPitchVisual();
 
   drawCentreGuide();
   drawVisualHits();
@@ -145,7 +161,6 @@ function draw() {
 // --------------------------------------------------
 
 function checkAllMusicHits() {
-  // Bass
   if (typeof getActiveBassHits === "function") {
     let bassHits = getActiveBassHits();
 
@@ -154,7 +169,6 @@ function checkAllMusicHits() {
     }
   }
 
-  // Drums
   if (typeof getActiveDrumHits === "function") {
     let drumHits = getActiveDrumHits();
 
@@ -163,7 +177,6 @@ function checkAllMusicHits() {
     }
   }
 
-  // Guitar
   if (typeof getGuitarHits === "function") {
     let guitarHits = getGuitarHits();
 
@@ -172,7 +185,6 @@ function checkAllMusicHits() {
     }
   }
 
-  // Strings
   if (typeof getActiveStringsHits === "function") {
     let stringsHits = getActiveStringsHits();
 
@@ -211,6 +223,10 @@ function mousePressed() {
       pauseSynthFFT();
     }
 
+    if (typeof pauseVocals === "function") {
+      pauseVocals();
+    }
+
     musicIsPlaying = false;
   } else {
     if (typeof playBass === "function") {
@@ -229,9 +245,12 @@ function mousePressed() {
       playStrings();
     }
 
-    // Both synth sounds start and remain playing continuously
     if (typeof playSynthFFT === "function") {
       playSynthFFT();
+    }
+
+    if (typeof playVocals === "function") {
+      playVocals();
     }
 
     musicIsPlaying = true;
@@ -348,18 +367,48 @@ function keyPressed() {
     muteStrings();
     stringsDisplay = "Strings Off";
   }
+
+
+  // -----------------------------
+  // VOCALS: U I O ON / J K L OFF / P ALL
+  // -----------------------------
+
+  if ((key === "u" || key === "U") && typeof unmuteVocal === "function") {
+    userStartAudio();
+    unmuteVocal(0);
+  }
+
+  if ((key === "i" || key === "I") && typeof unmuteVocal === "function") {
+    userStartAudio();
+    unmuteVocal(1);
+  }
+
+  if ((key === "o" || key === "O") && typeof unmuteVocal === "function") {
+    userStartAudio();
+    unmuteVocal(2);
+  }
+
+  if ((key === "j" || key === "J") && typeof muteVocal === "function") {
+    muteVocal(0);
+  }
+
+  if ((key === "k" || key === "K") && typeof muteVocal === "function") {
+    muteVocal(1);
+  }
+
+  if ((key === "l" || key === "L") && typeof muteVocal === "function") {
+    muteVocal(2);
+  }
+
+  if ((key === "p" || key === "P") && typeof toggleAllVocals === "function") {
+    userStartAudio();
+    toggleAllVocals();
+  }
 }
 
 
 // --------------------------------------------------
 // SYNTH FFT OUTER VISUAL
-//
-// Synth 1 = cyan outer spectral ring
-// Synth 2 = pink inner spectral ring
-//
-// Spectrum controls the uneven moving ring edge.
-// Centroid controls rotation speed.
-// Frequency energy controls ring size and glow.
 // --------------------------------------------------
 
 function drawSynthOuterVisual() {
@@ -382,13 +431,11 @@ function drawSynthOuterVisual() {
 
   let availableRadius = min(width, height) * 0.34;
 
-  // Synth 1 responds more to its mid and high-frequency content.
   let synth1Energy =
     typeof synth1MidEnergy !== "undefined"
       ? synth1MidEnergy + synth1HighEnergy
       : 0;
 
-  // Synth 2 responds more to low-mid and presence energy.
   let synth2Energy =
     typeof synth2LowMidEnergy !== "undefined"
       ? synth2LowMidEnergy + synth2PresenceEnergy
@@ -400,7 +447,6 @@ function drawSynthOuterVisual() {
   let synth1Radius = availableRadius + synth1Pulse;
   let synth2Radius = availableRadius - 48 + synth2Pulse;
 
-  // The brighter the synth sound, the faster the ring slowly turns.
   let synth1Speed = map(
     constrain(synth1CentroidFreq, 0, 8000),
     0,
@@ -422,7 +468,6 @@ function drawSynthOuterVisual() {
     synth2RingRotation -= synth2Speed;
   }
 
-  // Soft atmospheric outer glow
   noFill();
 
   stroke(80, 220, 255, 24 + synth1Pulse * 1.4);
@@ -433,7 +478,6 @@ function drawSynthOuterVisual() {
   strokeWeight(10);
   ellipse(centreX, centreY, synth2Radius * 2, synth2Radius * 2);
 
-  // Detailed moving FFT rings
   drawSpectrumRing(
     synth1Spectrum,
     centreX,
@@ -490,8 +534,6 @@ function drawSpectrumRing(
 
   beginShape();
 
-  // Use the lower half of the spectrum because it carries
-  // most of the visible musical movement.
   let usableBins = min(spectrum.length, 512);
   let step = max(1, floor(usableBins / 90));
 
@@ -516,8 +558,124 @@ function drawSpectrumRing(
 
 
 // --------------------------------------------------
+// VOCAL PITCH VISUAL
+//
+// OFF vocals show nothing.
+// ON vocals show grey "listening" orb until pitch is detected.
+// Detected pitch becomes coloured by closest note.
+// --------------------------------------------------
+
+function drawVocalPitchVisual() {
+  if (
+    typeof vocalFreq === "undefined" ||
+    typeof vocalNoteName === "undefined" ||
+    typeof vocalMuted === "undefined"
+  ) {
+    return;
+  }
+
+  let centreX = width / 2;
+  let centreY = height / 2;
+
+  drawSingleVocalPitchVisual(0, centreX, centreY, min(width, height) * 0.18);
+  drawSingleVocalPitchVisual(1, centreX, centreY, min(width, height) * 0.24);
+  drawSingleVocalPitchVisual(2, centreX, centreY, min(width, height) * 0.30);
+}
+
+
+function drawSingleVocalPitchVisual(index, centreX, centreY, orbitRadius) {
+  if (vocalMuted[index]) {
+    return;
+  }
+
+  let freq = vocalFreq[index];
+  let noteName = vocalNoteName[index];
+
+  let angle =
+    frameCount * (0.012 + index * 0.004) + index * TWO_PI / 3;
+
+  let x = centreX + cos(angle) * orbitRadius;
+  let y = centreY + sin(angle) * orbitRadius;
+
+  if (freq <= 0 || noteName === "-") {
+    let waitingSize = 34 + sin(frameCount * 0.08 + index) * 6;
+
+    noStroke();
+
+    fill(180, 180, 180, 35);
+    ellipse(x, y, waitingSize * 2.4, waitingSize * 2.4);
+
+    fill(180, 180, 180, 90);
+    ellipse(x, y, waitingSize * 1.5, waitingSize * 1.5);
+
+    fill(230, 230, 230, 190);
+    ellipse(x, y, waitingSize, waitingSize);
+
+    noFill();
+    stroke(230, 230, 230, 150);
+    strokeWeight(2);
+    ellipse(x, y, waitingSize * 1.25, waitingSize * 1.25);
+
+    noStroke();
+    fill(255, 220);
+    textSize(13);
+    text("V" + (index + 1) + " listening", x, y + 52);
+
+    return;
+  }
+
+  let colour = getVocalNoteColour(noteName);
+
+  let pitchSize = map(constrain(freq, 80, 1200), 80, 1200, 24, 95);
+  let pulse = sin(frameCount * 0.08 + freq * 0.01) * 12;
+
+  noStroke();
+
+  fill(colour[0], colour[1], colour[2], 35);
+  ellipse(x, y, pitchSize * 2.5 + pulse, pitchSize * 2.5 + pulse);
+
+  fill(colour[0], colour[1], colour[2], 85);
+  ellipse(x, y, pitchSize * 1.7 + pulse, pitchSize * 1.7 + pulse);
+
+  fill(colour[0], colour[1], colour[2], 230);
+  ellipse(x, y, pitchSize + pulse, pitchSize + pulse);
+
+  noFill();
+  stroke(colour[0], colour[1], colour[2], 190);
+  strokeWeight(2);
+  ellipse(x, y, pitchSize * 1.25 + pulse, pitchSize * 1.25 + pulse);
+
+  noStroke();
+  fill(255, 230);
+  textSize(13);
+  text(
+    "V" + (index + 1) + " " + noteName + " " + freq.toFixed(0) + "Hz",
+    x,
+    y + pitchSize + 22
+  );
+}
+
+
+function getVocalNoteColour(noteName) {
+  if (noteName === "C") return [255, 70, 90];
+  if (noteName === "C#") return [255, 120, 70];
+  if (noteName === "D") return [255, 190, 70];
+  if (noteName === "D#") return [220, 255, 80];
+  if (noteName === "E") return [120, 255, 100];
+  if (noteName === "F") return [80, 255, 180];
+  if (noteName === "F#") return [80, 240, 255];
+  if (noteName === "G") return [80, 170, 255];
+  if (noteName === "G#") return [100, 100, 255];
+  if (noteName === "A") return [150, 90, 255];
+  if (noteName === "A#") return [220, 90, 255];
+  if (noteName === "B") return [255, 80, 180];
+
+  return [100, 100, 100];
+}
+
+
+// --------------------------------------------------
 // BASS VISUAL
-// Large central circular pulse
 // --------------------------------------------------
 
 function createBassVisual(note) {
@@ -534,7 +692,6 @@ function createBassVisual(note) {
 
 // --------------------------------------------------
 // DRUM VISUAL
-// Sharp impact square and screen shake
 // --------------------------------------------------
 
 function createDrumVisual(note) {
@@ -555,7 +712,6 @@ function createDrumVisual(note) {
 
 // --------------------------------------------------
 // GUITAR VISUAL
-// Rotating diamond shape
 // --------------------------------------------------
 
 function createGuitarVisual(note) {
@@ -575,7 +731,6 @@ function createGuitarVisual(note) {
 
 // --------------------------------------------------
 // STRINGS VISUAL
-// Slow soft expanding rings
 // --------------------------------------------------
 
 function createStringsVisual(note) {
@@ -617,10 +772,6 @@ function drawVisualHits() {
 
     push();
 
-    // -----------------------------
-    // BASS: BLUE CENTRAL PULSE
-    // -----------------------------
-
     if (hit.type === "bass") {
       translate(width / 2, height / 2);
 
@@ -636,11 +787,6 @@ function drawVisualHits() {
       ellipse(0, 0, s, s);
     }
 
-
-    // -----------------------------
-    // DRUMS: RED IMPACT SHAPE
-    // -----------------------------
-
     if (hit.type === "drum") {
       translate(hit.x, hit.y);
       rotate(hit.rotation + frameCount * 0.025);
@@ -654,11 +800,6 @@ function drawVisualHits() {
       line(0, -s * 0.8, 0, s * 0.8);
     }
 
-
-    // -----------------------------
-    // GUITAR: YELLOW DIAMOND
-    // -----------------------------
-
     if (hit.type === "guitar") {
       translate(hit.x, hit.y);
       rotate(PI / 4 + hit.rotation + frameCount * 0.018);
@@ -670,11 +811,6 @@ function drawVisualHits() {
       rect(0, 0, s, s);
       rect(0, 0, s * 0.65, s * 0.65);
     }
-
-
-    // -----------------------------
-    // STRINGS: PURPLE RINGS
-    // -----------------------------
 
     if (hit.type === "strings") {
       translate(width / 2, height / 2);
@@ -720,25 +856,46 @@ function drawInterface() {
   text(
     "BASS       [1] [2] [3] [4] [5 Off]      " + bassDisplay,
     width / 2,
-    height - 120
+    height - 176
   );
 
   text(
     "DRUMS      [Q] [W] [E] [R] [T Off]      " + drumDisplay,
     width / 2,
-    height - 92
+    height - 148
   );
 
   text(
     "GUITAR     [A On] [S Off]                " + guitarDisplay,
     width / 2,
-    height - 64
+    height - 120
   );
 
   text(
     "STRINGS    [Z] [X] [C] [V] [B Off]      " + stringsDisplay,
     width / 2,
-    height - 36
+    height - 92
+  );
+
+  let vocal1Status = "V1 Off";
+  let vocal2Status = "V2 Off";
+  let vocal3Status = "V3 Off";
+
+  if (typeof vocalMuted !== "undefined") {
+    vocal1Status = vocalMuted[0] ? "V1 Off" : "V1 On";
+    vocal2Status = vocalMuted[1] ? "V2 Off" : "V2 On";
+    vocal3Status = vocalMuted[2] ? "V3 Off" : "V3 On";
+  }
+
+  text(
+    "VOCALS     [U I O On] [J K L Off] [P All]      " +
+      vocal1Status +
+      " / " +
+      vocal2Status +
+      " / " +
+      vocal3Status,
+    width / 2,
+    height - 64
   );
 }
 
