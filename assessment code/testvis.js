@@ -21,9 +21,9 @@
 //
 // Bouncing Synth:
 // Left wall   = sine
-// Right wall  = triangle
-// Top wall    = square
-// Bottom wall = sawtooth
+// Right wall  = sine
+// Top wall    = sine
+// Bottom wall = sine
 //
 // Mouse   = play / pause all instruments
 // --------------------------------------------------
@@ -54,6 +54,8 @@ let shakeAmount = 0;
 let synth1RingRotation = 0;
 let synth2RingRotation = 0;
 
+let wholeFFTRotation = 0;
+
 
 // --------------------------------------------------
 // BOUNCING SQUARE STATE
@@ -66,8 +68,8 @@ let bounceSquareY;
 
 let bounceSquareSize = 48;
 
-let bounceSquareSpeedX = 4;
-let bounceSquareSpeedY = 3;
+let bounceSquareSpeedX = 1.2;
+let bounceSquareSpeedY = 0.9;
 
 let bounceSquareFlash = 0;
 let bounceSquareText = "Bouncing synth ready";
@@ -136,6 +138,12 @@ function setup() {
     setupSynthFFTInputs();
   }
 
+  if (typeof setupWholeFFTInputs === "function") {
+    setupWholeFFTInputs();
+  } else {
+    console.log("setupWholeFFTInputs() not found. Check wholeFFT.js loads before testvis.js");
+  }
+
   if (typeof setupVocalPitchInputs === "function") {
     setupVocalPitchInputs();
   }
@@ -167,6 +175,14 @@ function draw() {
     if (typeof updateSynthFFTOutputs === "function") {
       updateSynthFFTOutputs();
     }
+
+    if (typeof updateWholeFFTOutputs === "function") {
+      updateWholeFFTOutputs();
+    }
+  } else {
+    if (typeof resetWholeFFTOutputs === "function") {
+      resetWholeFFTOutputs();
+    }
   }
 
   bgValue = lerp(bgValue, bgTarget, 0.18);
@@ -180,6 +196,8 @@ function draw() {
     random(-shakeAmount, shakeAmount),
     random(-shakeAmount, shakeAmount)
   );
+
+  drawWholeFFTVisual();
 
   drawSynthOuterVisual();
   drawVocalPitchVisual();
@@ -321,14 +339,14 @@ function updateBouncingSynthSquare() {
 
 
   // -----------------------------
-  // RIGHT WALL = TRIANGLE
+  // RIGHT WALL = SINE
   // -----------------------------
 
   if (bounceSquareX + bounceSquareSize / 2 >= width) {
     bounceSquareX = width - bounceSquareSize / 2;
     bounceSquareSpeedX *= -1;
 
-    triggerBouncingSynth(1, "Right wall: sine", "sine");
+    triggerBouncingSynth(0, "Right wall: sine", "sine");
   }
 
 
@@ -345,14 +363,14 @@ function updateBouncingSynthSquare() {
 
 
   // -----------------------------
-  // BOTTOM WALL = TRIANGLE
+  // BOTTOM WALL = SINE
   // -----------------------------
 
   if (bounceSquareY + bounceSquareSize / 2 >= height) {
     bounceSquareY = height - bounceSquareSize / 2;
     bounceSquareSpeedY *= -1;
 
-    triggerBouncingSynth(1, "Bottom wall: sine", "sine");
+    triggerBouncingSynth(0, "Bottom wall: sine", "sine");
   }
 
   bounceSquareFlash *= 0.88;
@@ -411,6 +429,169 @@ function drawBouncingSynthSquare() {
     bounceSquareSize + 12 + bounceSquareFlash * 0.2,
     bounceSquareSize + 12 + bounceSquareFlash * 0.2
   );
+
+  pop();
+}
+
+
+// --------------------------------------------------
+// WHOLE FFT VISUAL
+// Reacts to the full music output
+// --------------------------------------------------
+
+function drawWholeFFTVisual() {
+  if (
+    typeof wholeSpectrum === "undefined" ||
+    typeof wholeBassEnergy === "undefined" ||
+    typeof wholeHighEnergy === "undefined"
+  ) {
+    return;
+  }
+
+  let centreX = width / 2;
+  let centreY = height / 2;
+
+  let bassPulse = map(wholeBassEnergy, 0, 255, 0, 130, true);
+  let subPulse = map(wholeSubBassEnergy, 0, 255, 0, 90, true);
+  let lowMidPulse = map(wholeLowMidEnergy, 0, 255, 0, 80, true);
+  let midPulse = map(wholeMidEnergy, 0, 255, 0, 65, true);
+  let presencePulse = map(wholePresenceEnergy, 0, 255, 0, 70, true);
+  let highPulse = map(wholeHighEnergy, 0, 255, 0, 100, true);
+
+  let centroidAmount = map(
+    constrain(wholeCentroidFreq, 200, 6000),
+    200,
+    6000,
+    0,
+    1
+  );
+
+  wholeFFTRotation += 0.003 + centroidAmount * 0.012;
+
+  push();
+
+  translate(centreX, centreY);
+
+
+  // -----------------------------
+  // BIG SOFT BREATHING AURA
+  // -----------------------------
+
+  noStroke();
+
+  fill(40, 90, 180, 18 + bassPulse * 0.25);
+  ellipse(0, 0, 360 + bassPulse * 2.4, 360 + bassPulse * 2.4);
+
+  fill(120, 70, 210, 14 + midPulse * 0.2);
+  ellipse(0, 0, 270 + midPulse * 2.2, 270 + midPulse * 2.2);
+
+  fill(220, 80, 200, 10 + highPulse * 0.18);
+  ellipse(0, 0, 190 + highPulse * 2.0, 190 + highPulse * 2.0);
+
+
+  // -----------------------------
+  // SUB/BASS OUTER RINGS
+  // -----------------------------
+
+  noFill();
+
+  stroke(70, 145, 255, 80 + bassPulse);
+  strokeWeight(3 + subPulse * 0.05);
+  ellipse(0, 0, 290 + bassPulse, 290 + bassPulse);
+
+  stroke(120, 200, 255, 55 + subPulse);
+  strokeWeight(2);
+  ellipse(0, 0, 230 + subPulse, 230 + subPulse);
+
+
+  // -----------------------------
+  // MID ROTATING DIAMOND
+  // -----------------------------
+
+  push();
+
+  rotate(wholeFFTRotation);
+
+  stroke(255, 210, 80, 65 + midPulse);
+  strokeWeight(2);
+  rect(0, 0, 150 + lowMidPulse * 1.4, 150 + lowMidPulse * 1.4);
+
+  stroke(255, 120, 190, 45 + presencePulse);
+  strokeWeight(1.5);
+  rect(0, 0, 95 + presencePulse * 1.6, 95 + presencePulse * 1.6);
+
+  pop();
+
+
+  // -----------------------------
+  // WHOLE SPECTRUM SPIKY RING
+  // -----------------------------
+
+  if (wholeSpectrum && wholeSpectrum.length > 0) {
+    noFill();
+
+    let redValue = map(centroidAmount, 0, 1, 80, 255);
+    let blueValue = map(centroidAmount, 0, 1, 255, 120);
+
+    stroke(redValue, 190, blueValue, 160);
+    strokeWeight(2);
+
+    beginShape();
+
+    let usableBins = min(wholeSpectrum.length, 512);
+    let step = max(1, floor(usableBins / 150));
+
+    for (let i = 0; i < usableBins; i += step) {
+      let angle = map(i, 0, usableBins, 0, TWO_PI);
+
+      let amp = wholeSpectrum[i];
+
+      let baseRadius = 185;
+      let extraRadius = map(amp, 0, 255, 0, 150);
+
+      let radius = baseRadius + extraRadius + bassPulse * 0.2;
+
+      let x = cos(angle + wholeFFTRotation * 0.4) * radius;
+      let y = sin(angle + wholeFFTRotation * 0.4) * radius;
+
+      curveVertex(x, y);
+    }
+
+    endShape(CLOSE);
+  }
+
+
+  // -----------------------------
+  // HIGH FREQUENCY SPARKLES
+  // -----------------------------
+
+  let sparkleCount = floor(map(wholeHighEnergy, 0, 255, 0, 16, true));
+
+  noStroke();
+
+  for (let i = 0; i < sparkleCount; i++) {
+    let angle = random(TWO_PI);
+    let radius = random(190, 300 + highPulse);
+
+    let x = cos(angle) * radius;
+    let y = sin(angle) * radius;
+
+    fill(255, random(80, 220));
+    ellipse(x, y, random(2, 6), random(2, 6));
+  }
+
+
+  // -----------------------------
+  // CENTRE CORE
+  // -----------------------------
+
+  let coreSize = 35 + midPulse * 0.4 + highPulse * 0.25;
+
+  fill(255, 210);
+  ellipse(0, 0, coreSize, coreSize);
+
+  fill(80, 180, 255, 120);
+  ellipse(0, 0, coreSize * 1.8, coreSize * 1.8);
 
   pop();
 }

@@ -4,13 +4,7 @@ let wholeFFT;
 let wholeFFTIsPlaying = false;
 
 let wholeSmoothing = 0.8;
-let wholehBins = 1024;
-
-
-
-
-
-
+let wholeBins = 1024;
 
 
 
@@ -34,9 +28,6 @@ let wholeHighEnergy = 0;
 function setupwholeFFTInputs() {
 
 wholeFFT = new p5.FFT(wholeSmoothing,wholeBins);
-
-
-wholeFFT.setInput(wholeSound);
 
 
 resetWholeFFTOutputs();
