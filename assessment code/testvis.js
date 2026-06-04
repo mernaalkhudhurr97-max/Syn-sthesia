@@ -19,6 +19,12 @@
 //
 // P = all vocals ON/OFF
 //
+// Bouncing Synth:
+// Left wall   = sine
+// Right wall  = triangle
+// Top wall    = square
+// Bottom wall = sawtooth
+//
 // Mouse   = play / pause all instruments
 // --------------------------------------------------
 
@@ -47,6 +53,32 @@ let shakeAmount = 0;
 
 let synth1RingRotation = 0;
 let synth2RingRotation = 0;
+
+
+// --------------------------------------------------
+// BOUNCING SQUARE SYNTH STATE
+// --------------------------------------------------
+
+let bounceSynthOsc;
+let bounceSynthEnv;
+
+let bounceSynthVolume = 0.4;
+
+let bounceSynthTypes = ["sine", "triangle", "square", "sawtooth"];
+let activeBounceSynthTypeIndex = 0;
+
+let bounceSynthMidiNote = 66; // F#4
+
+let bounceSquareX;
+let bounceSquareY;
+
+let bounceSquareSize = 48;
+
+let bounceSquareSpeedX = 4;
+let bounceSquareSpeedY = 3;
+
+let bounceSquareFlash = 0;
+let bounceSquareText = "Bouncing synth ready";
 
 
 // --------------------------------------------------
@@ -114,6 +146,11 @@ function setup() {
   if (typeof setupVocalPitchInputs === "function") {
     setupVocalPitchInputs();
   }
+
+  setupBounceSynth();
+
+  bounceSquareX = width / 2;
+  bounceSquareY = height / 2;
 }
 
 
@@ -146,6 +183,9 @@ function draw() {
 
   drawSynthOuterVisual();
   drawVocalPitchVisual();
+
+  updateBouncingSynthSquare();
+  drawBouncingSynthSquare();
 
   drawCentreGuide();
   drawVisualHits();
@@ -255,6 +295,154 @@ function mousePressed() {
 
     musicIsPlaying = true;
   }
+}
+
+
+// --------------------------------------------------
+// BOUNCING SQUARE SYNTH BACKEND
+// --------------------------------------------------
+
+function setupBounceSynth() {
+  bounceSynthOsc = new p5.Oscillator();
+
+  bounceSynthOsc.setType(bounceSynthTypes[activeBounceSynthTypeIndex]);
+  bounceSynthOsc.amp(0);
+  bounceSynthOsc.start();
+
+  bounceSynthEnv = new p5.Envelope();
+
+  // attack, decay, sustain, release
+  bounceSynthEnv.setADSR(0.01, 0.08, 0.2, 0.25);
+
+  // max volume, min volume
+  bounceSynthEnv.setRange(bounceSynthVolume, 0);
+}
+
+
+function setBounceSynthType(index) {
+  activeBounceSynthTypeIndex = index;
+
+  let type = bounceSynthTypes[activeBounceSynthTypeIndex];
+
+  bounceSynthOsc.setType(type);
+}
+
+
+function playBounceSynthNote() {
+  userStartAudio();
+
+  let freq = midiToFreq(bounceSynthMidiNote);
+
+  bounceSynthOsc.freq(freq);
+  bounceSynthEnv.play(bounceSynthOsc);
+
+  bounceSquareFlash = 80;
+  bgTarget = max(bgTarget, 55);
+}
+
+
+function getCurrentBounceSynthType() {
+  return bounceSynthTypes[activeBounceSynthTypeIndex];
+}
+
+
+// --------------------------------------------------
+// BOUNCING SQUARE MOVEMENT
+// --------------------------------------------------
+
+function updateBouncingSynthSquare() {
+  bounceSquareX += bounceSquareSpeedX;
+  bounceSquareY += bounceSquareSpeedY;
+
+
+  // -----------------------------
+  // LEFT WALL = SINE
+  // -----------------------------
+
+  if (bounceSquareX - bounceSquareSize / 2 <= 0) {
+    bounceSquareX = bounceSquareSize / 2;
+    bounceSquareSpeedX *= -1;
+
+    setBounceSynthType(0); // sine
+    playBounceSynthNote();
+
+    bounceSquareText = "Left wall: sine";
+  }
+
+
+  // -----------------------------
+  // RIGHT WALL = TRIANGLE
+  // -----------------------------
+
+  if (bounceSquareX + bounceSquareSize / 2 >= width) {
+    bounceSquareX = width - bounceSquareSize / 2;
+    bounceSquareSpeedX *= -1;
+
+    setBounceSynthType(1); // triangle
+    playBounceSynthNote();
+
+    bounceSquareText = "Right wall: triangle";
+  }
+
+
+  // -----------------------------
+  // TOP WALL = SQUARE
+  // -----------------------------
+
+  if (bounceSquareY - bounceSquareSize / 2 <= 0) {
+    bounceSquareY = bounceSquareSize / 2;
+    bounceSquareSpeedY *= -1;
+
+    setBounceSynthType(2); // square
+    playBounceSynthNote();
+
+    bounceSquareText = "Top wall: square";
+  }
+
+
+  // -----------------------------
+  // BOTTOM WALL = SAWTOOTH
+  // -----------------------------
+
+  if (bounceSquareY + bounceSquareSize / 2 >= height) {
+    bounceSquareY = height - bounceSquareSize / 2;
+    bounceSquareSpeedY *= -1;
+
+    setBounceSynthType(3); // sawtooth
+    playBounceSynthNote();
+
+    bounceSquareText = "Bottom wall: sawtooth";
+  }
+
+  bounceSquareFlash *= 0.88;
+}
+
+
+// --------------------------------------------------
+// DRAW BOUNCING SQUARE
+// --------------------------------------------------
+
+function drawBouncingSynthSquare() {
+  push();
+
+  translate(bounceSquareX, bounceSquareY);
+
+  noStroke();
+
+  fill(80, 240, 255, 210);
+  rect(0, 0, bounceSquareSize, bounceSquareSize);
+
+  noFill();
+  stroke(255, 180 + bounceSquareFlash);
+  strokeWeight(3);
+  rect(
+    0,
+    0,
+    bounceSquareSize + 12 + bounceSquareFlash * 0.2,
+    bounceSquareSize + 12 + bounceSquareFlash * 0.2
+  );
+
+  pop();
 }
 
 
@@ -856,25 +1044,25 @@ function drawInterface() {
   text(
     "BASS       [1] [2] [3] [4] [5 Off]      " + bassDisplay,
     width / 2,
-    height - 176
+    height - 204
   );
 
   text(
     "DRUMS      [Q] [W] [E] [R] [T Off]      " + drumDisplay,
     width / 2,
-    height - 148
+    height - 176
   );
 
   text(
     "GUITAR     [A On] [S Off]                " + guitarDisplay,
     width / 2,
-    height - 120
+    height - 148
   );
 
   text(
     "STRINGS    [Z] [X] [C] [V] [B Off]      " + stringsDisplay,
     width / 2,
-    height - 92
+    height - 120
   );
 
   let vocal1Status = "V1 Off";
@@ -894,6 +1082,16 @@ function drawInterface() {
       vocal2Status +
       " / " +
       vocal3Status,
+    width / 2,
+    height - 92
+  );
+
+  text(
+    "BOUNCE SYNTH    " +
+      bounceSquareText +
+      "      Current: " +
+      getCurrentBounceSynthType() +
+      " / F#4",
     width / 2,
     height - 64
   );

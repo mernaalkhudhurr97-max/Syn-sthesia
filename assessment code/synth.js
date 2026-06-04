@@ -3,8 +3,8 @@
 let synthOsc;
 let synthEnv;
 
-let synthVolume = 0.4;
-
+let synthVolume = 0.3;
+let reverb;
 
 let synthTypes = ["sine", "triangle", "square", "sawtooth"];
 let activeSynthTypeIndex = 0;
@@ -23,8 +23,15 @@ function setupSynth() {
 
   /// https://p5js.org/reference/p5.PolySynth/noteADSR/ ///
 
-  synthEnv.setADSR(0.01, 0.08, 0.2, 0.25);
+  synthEnv.setADSR(0.01, 1, 1 , 0.25);
 
+  reverb = new p5.Reverb();
+
+  reverb.process(synthOsc, 3, 2);
+
+  ///https://p5js.org/reference/p5.Reverb/set///
+
+    reverb.set(3, 2);
 
   synthEnv.setRange(synthVolume, 0);
 }
