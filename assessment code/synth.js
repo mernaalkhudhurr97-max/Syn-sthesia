@@ -4,9 +4,9 @@
 
 let synthOsc;
 let synthEnv;
+let synthReverb;
 
 let synthVolumes = [0.02, 0.02, 0.02, 0.02];
-let synthreverb;
 
 let synthTypes = ["sine", "triangle", "square", "sawtooth"];
 
@@ -19,7 +19,7 @@ function setupSynth() {
   synthOsc = new p5.Oscillator();
 
   synthOsc.setType(synthTypes[activeSynthTypeIndex]);
-  synthEnv.freq(midiToFreq(synthMidiNote));
+  synthOsc.freq(midiToFreq(synthMidiNote));
   synthOsc.amp(0);
   synthOsc.start();
 
@@ -29,13 +29,13 @@ function setupSynth() {
 
   synthEnv.setADSR(0.01, 0.15, 0.21 , 0.25);
 
-  reverb = new p5.Reverb();
+  synthReverb = new p5.Reverb();
 
-  reverb.process(synthOsc, 3, 2);
+  synthReverb.process(synthOsc, 3, 2);
 
   ///https://p5js.org/reference/p5.Reverb/set///
 
-    reverb.set(3, 2, false);
+  synthReverb.set(3, 2, false);
 
   synthEnv.setRange(synthVolumes[activeSynthTypeIndex], 0);
 }
@@ -43,9 +43,19 @@ function setupSynth() {
 function setSynthType(index) {
   activeSynthTypeIndex = index;
 
+  if (activeSynthTypeIndex< 0) {
+    activeSynthTypeIndex = 0;
+    }
+
+    if (activeSynthTypeIndex >= synthTypes.length) {
+        activeSynthTypeIndex = synthTypes.length - 1;
+        }
+
   let type = synthTypes[activeSynthTypeIndex];
 
   synthOsc.setType(type);
+
+  synthEnv.setRange(synthVolumes[activeSynthTypeIndex], 0);
 }
 
 function nextSynthType() {
@@ -55,9 +65,7 @@ function nextSynthType() {
     activeSynthTypeIndex = 0;
   }
 
-  let type = synthTypes[activeSynthTypeIndex];
-
-  synthOsc.setType(type);
+  setSynthType(activeSynthTypeIndex);
 }
 
 function setSynthMidiNote(midiNote) {
@@ -70,9 +78,11 @@ function playSynthNote() {
   let freq = midiToFreq(synthMidiNote);
 
   synthOsc.freq(freq);
+
+  synthEnv.setRange(synthVolumes[activeSynthTypeIndex], 0);
+
   synthEnv.play(synthOsc);
 }
-
 function getCurrentSynthType() {
   return synthTypes[activeSynthTypeIndex];
 }
