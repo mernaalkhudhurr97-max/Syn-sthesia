@@ -3,7 +3,7 @@
 let synthOsc;
 let synthEnv;
 
-let synthVolume = 0.3;
+let synthVolume = [0.01, 0.01, 0.001, 0.001];
 let reverb;
 
 let synthTypes = ["sine", "triangle", "square", "sawtooth"];
@@ -23,15 +23,17 @@ function setupSynth() {
 
   /// https://p5js.org/reference/p5.PolySynth/noteADSR/ ///
 
-  synthEnv.setADSR(0.01, 1, 1 , 0.25);
+  synthEnv.setADSR(0.01, 0.11, 0.21 , 0.05);
 
   reverb = new p5.Reverb();
 
-  reverb.process(synthOsc, 3, 2);
+  reverb.process(synthOsc, 5, 3);
 
   ///https://p5js.org/reference/p5.Reverb/set///
 
-    reverb.set(3, 2);
+    reverb.set(5, 3, false);
+
+    reverb.drywet(0.1);
 
   synthEnv.setRange(synthVolume, 0);
 }
