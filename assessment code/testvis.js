@@ -56,18 +56,10 @@ let synth2RingRotation = 0;
 
 
 // --------------------------------------------------
-// BOUNCING SQUARE SYNTH STATE
+// BOUNCING SQUARE STATE
+// This only controls the visual square.
+// The sound comes from your separate synth backend.
 // --------------------------------------------------
-
-let bounceSynthOsc;
-let bounceSynthEnv;
-
-let bounceSynthVolume = 0.4;
-
-let bounceSynthTypes = ["sine", "triangle", "square", "sawtooth"];
-let activeBounceSynthTypeIndex = 0;
-
-let bounceSynthMidiNote = 66; // F#4
 
 let bounceSquareX;
 let bounceSquareY;
@@ -79,6 +71,7 @@ let bounceSquareSpeedY = 3;
 
 let bounceSquareFlash = 0;
 let bounceSquareText = "Bouncing synth ready";
+let bounceSquareCurrentSynthType = "sine";
 
 
 // --------------------------------------------------
@@ -147,7 +140,11 @@ function setup() {
     setupVocalPitchInputs();
   }
 
-  setupBounceSynth();
+  // This uses your separate synth file.
+  // Make sure the synth file has setupSynth().
+  if (typeof setupSynth === "function") {
+    setupSynth();
+  }
 
   bounceSquareX = width / 2;
   bounceSquareY = height / 2;
@@ -299,55 +296,8 @@ function mousePressed() {
 
 
 // --------------------------------------------------
-// BOUNCING SQUARE SYNTH BACKEND
-// --------------------------------------------------
-
-function setupBounceSynth() {
-  bounceSynthOsc = new p5.Oscillator();
-
-  bounceSynthOsc.setType(bounceSynthTypes[activeBounceSynthTypeIndex]);
-  bounceSynthOsc.amp(0);
-  bounceSynthOsc.start();
-
-  bounceSynthEnv = new p5.Envelope();
-
-  // attack, decay, sustain, release
-  bounceSynthEnv.setADSR(0.01, 0.08, 0.2, 0.25);
-
-  // max volume, min volume
-  bounceSynthEnv.setRange(bounceSynthVolume, 0);
-}
-
-
-function setBounceSynthType(index) {
-  activeBounceSynthTypeIndex = index;
-
-  let type = bounceSynthTypes[activeBounceSynthTypeIndex];
-
-  bounceSynthOsc.setType(type);
-}
-
-
-function playBounceSynthNote() {
-  userStartAudio();
-
-  let freq = midiToFreq(bounceSynthMidiNote);
-
-  bounceSynthOsc.freq(freq);
-  bounceSynthEnv.play(bounceSynthOsc);
-
-  bounceSquareFlash = 80;
-  bgTarget = max(bgTarget, 55);
-}
-
-
-function getCurrentBounceSynthType() {
-  return bounceSynthTypes[activeBounceSynthTypeIndex];
-}
-
-
-// --------------------------------------------------
 // BOUNCING SQUARE MOVEMENT
+// This calls your separate synth backend.
 // --------------------------------------------------
 
 function updateBouncingSynthSquare() {
@@ -363,10 +313,7 @@ function updateBouncingSynthSquare() {
     bounceSquareX = bounceSquareSize / 2;
     bounceSquareSpeedX *= -1;
 
-    setBounceSynthType(0); // sine
-    playBounceSynthNote();
-
-    bounceSquareText = "Left wall: sine";
+    triggerBouncingSynth(0, "Left wall: sine", "sine");
   }
 
 
@@ -378,10 +325,7 @@ function updateBouncingSynthSquare() {
     bounceSquareX = width - bounceSquareSize / 2;
     bounceSquareSpeedX *= -1;
 
-    setBounceSynthType(1); // triangle
-    playBounceSynthNote();
-
-    bounceSquareText = "Right wall: triangle";
+    triggerBouncingSynth(1, "Right wall: triangle", "triangle");
   }
 
 
@@ -393,10 +337,7 @@ function updateBouncingSynthSquare() {
     bounceSquareY = bounceSquareSize / 2;
     bounceSquareSpeedY *= -1;
 
-    setBounceSynthType(2); // square
-    playBounceSynthNote();
-
-    bounceSquareText = "Top wall: square";
+    triggerBouncingSynth(2, "Top wall: square", "square");
   }
 
 
@@ -408,13 +349,35 @@ function updateBouncingSynthSquare() {
     bounceSquareY = height - bounceSquareSize / 2;
     bounceSquareSpeedY *= -1;
 
-    setBounceSynthType(3); // sawtooth
-    playBounceSynthNote();
-
-    bounceSquareText = "Bottom wall: sawtooth";
+    triggerBouncingSynth(3, "Bottom wall: sawtooth", "sawtooth");
   }
 
   bounceSquareFlash *= 0.88;
+}
+
+
+// --------------------------------------------------
+// TRIGGER SEPARATE SYNTH BACKEND
+// --------------------------------------------------
+
+function triggerBouncingSynth(typeIndex, displayText, fallbackTypeName) {
+  if (typeof setSynthType === "function") {
+    setSynthType(typeIndex);
+  }
+
+  if (typeof playSynthNote === "function") {
+    playSynthNote();
+  }
+
+  if (typeof getCurrentSynthType === "function") {
+    bounceSquareCurrentSynthType = getCurrentSynthType();
+  } else {
+    bounceSquareCurrentSynthType = fallbackTypeName;
+  }
+
+  bounceSquareText = displayText;
+  bounceSquareFlash = 80;
+  bgTarget = max(bgTarget, 55);
 }
 
 
@@ -1090,7 +1053,7 @@ function drawInterface() {
     "BOUNCE SYNTH    " +
       bounceSquareText +
       "      Current: " +
-      getCurrentBounceSynthType() +
+      bounceSquareCurrentSynthType +
       " / F#4",
     width / 2,
     height - 64

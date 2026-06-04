@@ -1,12 +1,15 @@
 
 
+
+
 let synthOsc;
 let synthEnv;
 
-let synthVolume = [0.01, 0.01, 0.001, 0.001];
-let reverb;
+let synthVolumes = [0.02, 0.02, 0.02, 0.02];
+let synthreverb;
 
 let synthTypes = ["sine", "triangle", "square", "sawtooth"];
+
 let activeSynthTypeIndex = 0;
 
 
@@ -16,6 +19,7 @@ function setupSynth() {
   synthOsc = new p5.Oscillator();
 
   synthOsc.setType(synthTypes[activeSynthTypeIndex]);
+  synthEnv.freq(midiToFreq(synthMidiNote));
   synthOsc.amp(0);
   synthOsc.start();
 
@@ -23,19 +27,17 @@ function setupSynth() {
 
   /// https://p5js.org/reference/p5.PolySynth/noteADSR/ ///
 
-  synthEnv.setADSR(0.01, 0.11, 0.21 , 0.05);
+  synthEnv.setADSR(0.01, 0.15, 0.21 , 0.25);
 
   reverb = new p5.Reverb();
 
-  reverb.process(synthOsc, 5, 3);
+  reverb.process(synthOsc, 3, 2);
 
   ///https://p5js.org/reference/p5.Reverb/set///
 
-    reverb.set(5, 3, false);
+    reverb.set(3, 2, false);
 
-    reverb.drywet(0.1);
-
-  synthEnv.setRange(synthVolume, 0);
+  synthEnv.setRange(synthVolumes[activeSynthTypeIndex], 0);
 }
 
 function setSynthType(index) {
