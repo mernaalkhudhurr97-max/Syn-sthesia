@@ -140,10 +140,13 @@ function setup() {
     setupVocalPitchInputs();
   }
 
-  // This uses your separate synth file.
-  // Make sure the synth file has setupSynth().
+  // IMPORTANT:
+  // This calls your separate synth backend file.
+  // Your synth file must contain setupSynth().
   if (typeof setupSynth === "function") {
     setupSynth();
+  } else {
+    console.log("setupSynth() not found. Check that synth.js loads before testvis.js");
   }
 
   bounceSquareX = width / 2;
@@ -325,31 +328,31 @@ function updateBouncingSynthSquare() {
     bounceSquareX = width - bounceSquareSize / 2;
     bounceSquareSpeedX *= -1;
 
-    triggerBouncingSynth(1, "Right wall: triangle", "triangle");
+    triggerBouncingSynth(1, "Right wall: sine", "sine");
   }
 
 
   // -----------------------------
-  // TOP WALL = SQUARE
+  // TOP WALL = SINE
   // -----------------------------
 
   if (bounceSquareY - bounceSquareSize / 2 <= 0) {
     bounceSquareY = bounceSquareSize / 2;
     bounceSquareSpeedY *= -1;
 
-    triggerBouncingSynth(2, "Top wall: square", "square");
+    triggerBouncingSynth(0, "Top wall: sine", "sine");
   }
 
 
   // -----------------------------
-  // BOTTOM WALL = SAWTOOTH
+  // BOTTOM WALL = TRIANGLE
   // -----------------------------
 
   if (bounceSquareY + bounceSquareSize / 2 >= height) {
     bounceSquareY = height - bounceSquareSize / 2;
     bounceSquareSpeedY *= -1;
 
-    triggerBouncingSynth(3, "Bottom wall: sawtooth", "sawtooth");
+    triggerBouncingSynth(1, "Bottom wall: sine", "sine");
   }
 
   bounceSquareFlash *= 0.88;
@@ -363,10 +366,14 @@ function updateBouncingSynthSquare() {
 function triggerBouncingSynth(typeIndex, displayText, fallbackTypeName) {
   if (typeof setSynthType === "function") {
     setSynthType(typeIndex);
+  } else {
+    console.log("setSynthType() not found. Check synth.js is loaded.");
   }
 
   if (typeof playSynthNote === "function") {
     playSynthNote();
+  } else {
+    console.log("playSynthNote() not found. Check synth.js is loaded.");
   }
 
   if (typeof getCurrentSynthType === "function") {
@@ -554,6 +561,20 @@ function keyPressed() {
   if ((key === "p" || key === "P") && typeof toggleAllVocals === "function") {
     userStartAudio();
     toggleAllVocals();
+  }
+
+
+  // -----------------------------
+  // MANUAL SYNTH TEST
+  // Press M to check your separate synth backend directly.
+  // -----------------------------
+
+  if (key === "m" || key === "M") {
+    if (typeof playSynthNote === "function") {
+      playSynthNote();
+    } else {
+      console.log("playSynthNote() not found. Check synth.js is loaded before testvis.js.");
+    }
   }
 }
 
@@ -1067,4 +1088,16 @@ function drawInterface() {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+
+  bounceSquareX = constrain(
+    bounceSquareX,
+    bounceSquareSize / 2,
+    width - bounceSquareSize / 2
+  );
+
+  bounceSquareY = constrain(
+    bounceSquareY,
+    bounceSquareSize / 2,
+    height - bounceSquareSize / 2
+  );
 }
