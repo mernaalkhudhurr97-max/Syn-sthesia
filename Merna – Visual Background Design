@@ -1,0 +1,642 @@
+let nodes = [];
+let cubes = [];
+let particles = [];
+let rings = [];
+let glowBands = [];
+let extraObjects = [];
+let sparkles = [];
+let petals = [];
+let ribbons = [];
+let beads = [];
+
+let t = 0;
+let paused = false;
+
+const PAL = [
+  '#0B0D2B', '#0A102D', '#0F1440',
+  '#14C8FF', '#4FE7FF', '#62B7FF',
+  '#FFFFFF', '#EAFBFF', '#B7FFFF',
+  '#FF65C7', '#FFD66B', '#7CFFB2',
+  '#A56BFF', '#FF8F5E', '#FF5AA5',
+  '#29F2D0', '#FFB4E6', '#7DF9FF'
+];
+
+function rp(arr = PAL) {
+  return random(arr);
+}
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  pixelDensity(1);
+  colorMode(RGB);
+  resetScene();
+}
+
+function draw() {
+  if (paused) return;
+  t++;
+
+  background(4, 6, 22);
+
+  drawBackdropGlow();
+  drawTopAurora();
+  drawSoftStars();
+
+  for (let g of glowBands) g.draw();
+  for (let r of rings) r.draw();
+
+  drawRadialFan();
+
+  for (let p of particles) {
+    p.update();
+    p.draw();
+  }
+
+  for (let c of cubes) {
+    c.update();
+    c.draw();
+  }
+
+  for (let n of nodes) {
+    n.update();
+    n.draw();
+  }
+
+  for (let e of extraObjects) {
+    e.update();
+    e.draw();
+  }
+
+  for (let s of sparkles) {
+    s.update();
+    s.draw();
+  }
+
+  for (let p of petals) {
+    p.update();
+    p.draw();
+  }
+
+  for (let r of ribbons) {
+    r.update();
+    r.draw();
+  }
+
+  for (let b of beads) {
+    b.update();
+    b.draw();
+  }
+}
+
+function drawBackdropGlow() {
+  push();
+  noStroke();
+  blendMode(ADD);
+  for (let i = 0; i < 10; i++) {
+    let c = color(rp(['#08102E', '#0B1239', '#09154A']));
+    fill(red(c), green(c), blue(c), 14);
+    circle(width / 2, height * 0.12, 260 + i * 150 + sin(t * 0.01 + i) * 35);
+  }
+  pop();
+}
+
+function drawTopAurora() {
+  push();
+  noFill();
+  strokeWeight(1.2);
+  for (let i = 0; i < 6; i++) {
+    let c = color(rp(['#14C8FF', '#4FE7FF', '#62B7FF', '#FF65C7', '#7CFFB2']));
+    stroke(red(c), green(c), blue(c), 18);
+    beginShape();
+    for (let x = -20; x <= width + 20; x += 18) {
+      let n = noise(x * 0.002, i * 0.7, t * 0.003);
+      let y = map(n, 0, 1, height * 0.02, height * 0.3);
+      y += sin(t * 0.01 + x * 0.008 + i) * 18;
+      curveVertex(x, y);
+    }
+    endShape();
+  }
+  pop();
+}
+
+function drawSoftStars() {
+  push();
+  noStroke();
+  for (let i = 0; i < 100; i++) {
+    let x = (i * 97 + t * 0.1) % width;
+    let y = (noise(i * 0.08, t * 0.002) * height);
+    fill(255, 255, 255, 30);
+    circle(x, y, 1.2 + noise(i, t * 0.01) * 1.8);
+  }
+  pop();
+}
+
+function drawRadialFan() {
+  push();
+  translate(width / 2, 0);
+  blendMode(ADD);
+
+  let count = 15;
+  let spread = PI * 0.92;
+  let start = PI * 0.06;
+
+  for (let i = 0; i < count; i++) {
+    let a = map(i, 0, count - 1, start, start + spread);
+    let len = height * 0.5 + sin(t * 0.01 + i) * 18;
+    let c = color(rp(['#6FE8FF', '#4FCBFF', '#2EA7FF', '#8BE9FF']));
+
+    stroke(red(c), green(c), blue(c), 55);
+    strokeWeight(1.05);
+    line(0, 0, cos(a) * len, sin(a) * len);
+
+    stroke(red(c), green(c), blue(c), 18);
+    strokeWeight(3);
+    line(0, 0, cos(a) * len, sin(a) * len);
+  }
+  pop();
+}
+
+class NodeOrb {
+  constructor(angle, radius, size, col) {
+    this.angle = angle;
+    this.baseRadius = radius;
+    this.size = size;
+    this.col = col;
+    this.phase = random(TWO_PI);
+    this.speed = random(0.003, 0.01) * (random() < 0.5 ? 1 : -1);
+  }
+
+  update() {
+    this.angle += this.speed;
+  }
+
+  draw() {
+    let r = this.baseRadius + sin(t * 0.015 + this.phase) * 8;
+    let x = width / 2 + cos(this.angle) * r;
+    let y = sin(this.angle) * r * 0.72;
+
+    push();
+    translate(x, y);
+    noStroke();
+    blendMode(ADD);
+
+    fill(red(this.col), green(this.col), blue(this.col), 24);
+    circle(0, 0, this.size * 2.8);
+
+    fill(red(this.col), green(this.col), blue(this.col), 220);
+    circle(0, 0, this.size);
+
+    fill(255, 255, 255, 120);
+    circle(-this.size * 0.18, -this.size * 0.18, this.size * 0.28);
+    pop();
+  }
+}
+
+class FloatingCube {
+  constructor() {
+    this.x = random(width * 0.05, width * 0.95);
+    this.y = random(height * 0.35, height * 0.98);
+    this.size = random(8, 46);
+    this.rot = random(TWO_PI);
+    this.spin = random(-0.01, 0.01);
+    this.col1 = random(['#FFFFFF', '#4FE7FF', '#14C8FF', '#FF65C7', '#7CFFB2']);
+    this.col2 = random(['#FFFFFF', '#B7FFFF', '#62B7FF', '#FFD66B']);
+    this.vx = random(-0.15, 0.15);
+    this.vy = random(-0.12, 0.12);
+    this.seed = random(1000);
+  }
+
+  update() {
+    this.x += this.vx + sin(t * 0.004 + this.seed) * 0.15;
+    this.y += this.vy + cos(t * 0.004 + this.seed) * 0.1;
+    this.rot += this.spin;
+
+    if (this.x < -80) this.x = width + 80;
+    if (this.x > width + 80) this.x = -80;
+    if (this.y < -80) this.y = height + 80;
+    if (this.y > height + 80) this.y = -80;
+  }
+
+  draw() {
+    push();
+    translate(this.x, this.y);
+    rotate(this.rot);
+    noStroke();
+    rectMode(CENTER);
+
+    fill(red(color(this.col1)), green(color(this.col1)), blue(color(this.col1)), 245);
+    rect(0, 0, this.size, this.size, 2);
+
+    fill(red(color(this.col2)), green(color(this.col2)), blue(color(this.col2)), 100);
+    rect(4, -4, this.size * 0.72, this.size * 0.72, 2);
+
+    pop();
+  }
+}
+
+class Particle {
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.x = random(width);
+    this.y = random(height);
+    this.vx = random(-0.35, 0.35);
+    this.vy = random(-0.35, 0.35);
+    this.size = random(0.6, 2.5);
+    this.col = random(['#FFFFFF', '#EAFBFF', '#B7FFFF', '#4FE7FF', '#FF65C7', '#FFD66B', '#7CFFB2']);
+    this.life = random(120, 240);
+  }
+
+  update() {
+    this.x += this.vx + sin(t * 0.01 + this.y * 0.01) * 0.1;
+    this.y += this.vy + cos(t * 0.01 + this.x * 0.01) * 0.1;
+    this.life--;
+
+    if (this.life <= 0 || this.x < -20 || this.x > width + 20 || this.y < -20 || this.y > height + 20) {
+      this.reset();
+    }
+  }
+
+  draw() {
+    noStroke();
+    fill(red(color(this.col)), green(color(this.col)), blue(color(this.col)), 160);
+    circle(this.x, this.y, this.size);
+  }
+}
+
+class GlowRing {
+  constructor() {
+    this.x = random(width * 0.1, width * 0.9);
+    this.y = random(height * 0.15, height * 0.95);
+    this.r = random(24, 120);
+    this.col = random(['#14C8FF', '#4FE7FF', '#62B7FF', '#FF65C7', '#FFD66B', '#7CFFB2']);
+    this.phase = random(TWO_PI);
+  }
+
+  draw() {
+    push();
+    blendMode(ADD);
+    noFill();
+    strokeWeight(1.1);
+    let c = color(this.col);
+    stroke(red(c), green(c), blue(c), 35);
+    circle(this.x, this.y, this.r * 2 + sin(t * 0.02 + this.phase) * 8);
+    stroke(red(c), green(c), blue(c), 12);
+    circle(this.x, this.y, this.r * 3.1);
+    pop();
+  }
+}
+
+class ExtraObject {
+  constructor() {
+    this.kind = random([
+      'sparkstar', 'gem', 'moon', 'orbit', 'flower',
+      'beam', 'drop', 'halo', 'prism', 'satellite',
+      'heart', 'diamondtrail', 'lens', 'coin', 'shard'
+    ]);
+    this.x = random(width);
+    this.y = random(height * 0.2, height);
+    this.a = random(TWO_PI);
+    this.s = random(10, 34);
+    this.c1 = random(['#14C8FF', '#4FE7FF', '#FF65C7', '#FFD66B', '#7CFFB2', '#FFFFFF', '#A56BFF']);
+    this.c2 = random(['#FFFFFF', '#B7FFFF', '#62B7FF', '#FFB4E6']);
+    this.vx = random(-0.12, 0.12);
+    this.vy = random(-0.18, 0.08);
+    this.spin = random(-0.02, 0.02);
+    this.phase = random(1000);
+  }
+
+  update() {
+    this.x += this.vx + sin(t * 0.01 + this.phase) * 0.12;
+    this.y += this.vy + cos(t * 0.008 + this.phase) * 0.12;
+    this.a += this.spin;
+
+    if (this.x < -60) this.x = width + 60;
+    if (this.x > width + 60) this.x = -60;
+    if (this.y < -60) this.y = height + 60;
+    if (this.y > height + 60) this.y = -60;
+  }
+
+  draw() {
+    push();
+    translate(this.x, this.y);
+    rotate(this.a);
+    blendMode(ADD);
+
+    let a1 = color(this.c1);
+    let a2 = color(this.c2);
+
+    if (this.kind === 'sparkstar') {
+      noFill();
+      stroke(red(a1), green(a1), blue(a1), 220);
+      strokeWeight(1.2);
+      line(-this.s, 0, this.s, 0);
+      line(0, -this.s, 0, this.s);
+      line(-this.s * 0.7, -this.s * 0.7, this.s * 0.7, this.s * 0.7);
+      line(-this.s * 0.7, this.s * 0.7, this.s * 0.7, -this.s * 0.7);
+    } else if (this.kind === 'gem') {
+      noStroke();
+      fill(red(a1), green(a1), blue(a1), 220);
+      beginShape();
+      vertex(0, -this.s);
+      vertex(this.s * 0.7, 0);
+      vertex(0, this.s);
+      vertex(-this.s * 0.7, 0);
+      endShape(CLOSE);
+      fill(red(a2), green(a2), blue(a2), 90);
+      triangle(0, -this.s, this.s * 0.7, 0, 0, 0);
+    } else if (this.kind === 'moon') {
+      noStroke();
+      fill(red(a1), green(a1), blue(a1), 210);
+      arc(0, 0, this.s * 1.8, this.s * 1.8, PI * 0.25, PI * 1.75);
+      fill(4, 6, 22);
+      circle(this.s * 0.35, -this.s * 0.25, this.s * 1.2);
+    } else if (this.kind === 'orbit') {
+      noFill();
+      stroke(red(a1), green(a1), blue(a1), 200);
+      strokeWeight(1.1);
+      ellipse(0, 0, this.s * 1.4, this.s * 0.7);
+      noStroke();
+      fill(red(a2), green(a2), blue(a2), 220);
+      circle(this.s * 0.7, 0, this.s * 0.2);
+    } else if (this.kind === 'flower') {
+      noStroke();
+      for (let i = 0; i < 6; i++) {
+        let ang = map(i, 0, 6, 0, TWO_PI);
+        fill(red(a1), green(a1), blue(a1), 180);
+        ellipse(cos(ang) * this.s * 0.45, sin(ang) * this.s * 0.45, this.s * 0.5, this.s * 0.24);
+      }
+      fill(red(a2), green(a2), blue(a2), 220);
+      circle(0, 0, this.s * 0.45);
+    } else if (this.kind === 'beam') {
+      noFill();
+      stroke(red(a1), green(a1), blue(a1), 180);
+      strokeWeight(1.3);
+      line(-this.s, 0, this.s, 0);
+      stroke(red(a2), green(a2), blue(a2), 90);
+      line(0, -this.s, 0, this.s);
+    } else if (this.kind === 'drop') {
+      noStroke();
+      fill(red(a1), green(a1), blue(a1), 210);
+      beginShape();
+      vertex(0, -this.s);
+      bezierVertex(this.s * 0.7, -this.s * 0.2, this.s * 0.45, this.s * 0.8, 0, this.s * 0.9);
+      bezierVertex(-this.s * 0.45, this.s * 0.8, -this.s * 0.7, -this.s * 0.2, 0, -this.s);
+      endShape(CLOSE);
+    } else if (this.kind === 'halo') {
+      noFill();
+      stroke(red(a1), green(a1), blue(a1), 210);
+      strokeWeight(1);
+      ellipse(0, 0, this.s * 1.6, this.s * 1.6);
+      ellipse(0, 0, this.s * 0.8, this.s * 0.8);
+    } else if (this.kind === 'prism') {
+      noStroke();
+      fill(red(a1), green(a1), blue(a1), 210);
+      triangle(0, -this.s, this.s * 0.8, this.s * 0.6, -this.s * 0.8, this.s * 0.6);
+      fill(red(a2), green(a2), blue(a2), 100);
+      triangle(0, -this.s, this.s * 0.8, this.s * 0.6, 0, 0);
+    } else if (this.kind === 'satellite') {
+      noStroke();
+      fill(red(a1), green(a1), blue(a1), 220);
+      circle(0, 0, this.s * 0.6);
+      fill(red(a2), green(a2), blue(a2), 180);
+      rectMode(CENTER);
+      rect(this.s * 0.75, 0, this.s * 0.8, this.s * 0.3, 2);
+      rectMode(CORNER);
+    } else if (this.kind === 'heart') {
+      noStroke();
+      fill(red(a1), green(a1), blue(a1), 220);
+      beginShape();
+      vertex(0, this.s * 0.9);
+      bezierVertex(-this.s, 0.2, -this.s * 0.8, -this.s * 0.8, 0, -this.s * 0.2);
+      bezierVertex(this.s * 0.8, -this.s * 0.8, this.s, 0.2, 0, this.s * 0.9);
+      endShape(CLOSE);
+    } else if (this.kind === 'diamondtrail') {
+      noStroke();
+      fill(red(a1), green(a1), blue(a1), 220);
+      beginShape();
+      vertex(0, -this.s);
+      vertex(this.s * 0.45, 0);
+      vertex(0, this.s);
+      vertex(-this.s * 0.45, 0);
+      endShape(CLOSE);
+      fill(red(a2), green(a2), blue(a2), 80);
+      ellipse(-this.s * 0.8, 0, this.s * 0.6, this.s * 0.2);
+    } else if (this.kind === 'lens') {
+      noFill();
+      stroke(red(a1), green(a1), blue(a1), 220);
+      strokeWeight(1);
+      ellipse(0, 0, this.s * 1.4, this.s * 0.8);
+      fill(red(a2), green(a2), blue(a2), 120);
+      circle(0, 0, this.s * 0.32);
+    } else if (this.kind === 'coin') {
+      noStroke();
+      fill(red(a1), green(a1), blue(a1), 220);
+      circle(0, 0, this.s * 1.0);
+      fill(red(a2), green(a2), blue(a2), 80);
+      circle(-this.s * 0.15, -this.s * 0.15, this.s * 0.35);
+    } else if (this.kind === 'shard') {
+      noStroke();
+      fill(red(a1), green(a1), blue(a1), 200);
+      beginShape();
+      vertex(0, -this.s);
+      vertex(this.s * 0.55, -this.s * 0.1);
+      vertex(this.s * 0.25, this.s);
+      vertex(-this.s * 0.35, this.s * 0.65);
+      endShape(CLOSE);
+    }
+
+    pop();
+  }
+}
+
+class Sparkle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = random(width);
+    this.y = random(height);
+    this.s = random(1, 5);
+    this.c = random(['#FFFFFF', '#B7FFFF', '#4FE7FF', '#FF65C7', '#FFD66B']);
+    this.phase = random(1000);
+    this.life = random(80, 180);
+  }
+  update() {
+    this.phase += 0.04;
+    this.y += sin(this.phase) * 0.25;
+    this.x += cos(this.phase * 0.8) * 0.15;
+    this.life--;
+    if (this.life <= 0) this.reset();
+  }
+  draw() {
+    push();
+    blendMode(ADD);
+    noStroke();
+    let c = color(this.c);
+    fill(red(c), green(c), blue(c), 160);
+    circle(this.x, this.y, this.s);
+    fill(red(c), green(c), blue(c), 40);
+    circle(this.x, this.y, this.s * 4);
+    pop();
+  }
+}
+
+class Petal {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = random(width);
+    this.y = random(height * 0.3, height);
+    this.r = random(6, 18);
+    this.c1 = random(['#FF65C7', '#FFD66B', '#7CFFB2', '#4FE7FF', '#A56BFF']);
+    this.a = random(TWO_PI);
+    this.spin = random(-0.02, 0.02);
+    this.life = random(120, 260);
+  }
+  update() {
+    this.a += this.spin;
+    this.y += sin(t * 0.01 + this.x * 0.01) * 0.15;
+    this.life--;
+    if (this.life <= 0) this.reset();
+  }
+  draw() {
+    push();
+    translate(this.x, this.y);
+    rotate(this.a);
+    blendMode(ADD);
+    noStroke();
+    let c = color(this.c1);
+    fill(red(c), green(c), blue(c), 170);
+    ellipse(0, 0, this.r * 1.5, this.r * 0.55);
+    fill(255, 255, 255, 30);
+    ellipse(0, 0, this.r * 0.8, this.r * 0.22);
+    pop();
+  }
+}
+
+class Ribbon {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = random(width);
+    this.y = random(height);
+    this.len = random(35, 120);
+    this.w = random(2, 6);
+    this.c = random(['#14C8FF', '#FF65C7', '#FFD66B', '#7CFFB2', '#A56BFF']);
+    this.phase = random(1000);
+    this.life = random(120, 260);
+  }
+  update() {
+    this.phase += 0.02;
+    this.x += sin(this.phase) * 0.4;
+    this.y += cos(this.phase) * 0.4;
+    this.life--;
+    if (this.life <= 0) this.reset();
+  }
+  draw() {
+    push();
+    translate(this.x, this.y);
+    rotate(sin(this.phase) * 0.6);
+    blendMode(ADD);
+    noFill();
+    let c = color(this.c);
+    stroke(red(c), green(c), blue(c), 110);
+    strokeWeight(this.w);
+    beginShape();
+    for (let i = 0; i < 6; i++) {
+      let px = map(i, 0, 5, -this.len * 0.5, this.len * 0.5);
+      let py = sin(i * 0.9 + this.phase) * 8;
+      curveVertex(px, py);
+    }
+    endShape();
+    pop();
+  }
+}
+
+class Bead {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = random(width);
+    this.y = random(height);
+    this.r = random(2, 10);
+    this.c = random(['#FFFFFF', '#B7FFFF', '#4FE7FF', '#FF65C7', '#FFD66B']);
+    this.vx = random(-0.12, 0.12);
+    this.vy = random(-0.12, 0.12);
+    this.life = random(100, 220);
+  }
+  update() {
+    this.x += this.vx + sin(t * 0.01 + this.y * 0.02) * 0.08;
+    this.y += this.vy + cos(t * 0.01 + this.x * 0.02) * 0.08;
+    this.life--;
+    if (this.life <= 0) this.reset();
+  }
+  draw() {
+    push();
+    blendMode(ADD);
+    noStroke();
+    let c = color(this.c);
+    fill(red(c), green(c), blue(c), 180);
+    circle(this.x, this.y, this.r);
+    fill(red(c), green(c), blue(c), 40);
+    circle(this.x, this.y, this.r * 4);
+    pop();
+  }
+}
+
+function resetScene() {
+  randomSeed(floor(random(100000)));
+  noiseSeed(floor(random(100000)));
+
+  nodes = [];
+  cubes = [];
+  particles = [];
+  rings = [];
+  glowBands = [];
+  extraObjects = [];
+  sparkles = [];
+  petals = [];
+  ribbons = [];
+  beads = [];
+
+  let nodeCount = 13;
+  for (let i = 0; i < nodeCount; i++) {
+    let a = map(i, 0, nodeCount - 1, PI * 0.08, PI * 0.92);
+    let r = map(i, 0, nodeCount - 1, 70, min(width, height) * 0.38);
+    let sz = map(i, 0, nodeCount - 1, 8, 18) * random(0.8, 1.15);
+    let col = random(['#14C8FF', '#4FE7FF', '#62B7FF', '#B7FFFF']);
+    nodes.push(new NodeOrb(a, r, sz, color(col)));
+  }
+
+  for (let i = 0; i < 18; i++) cubes.push(new FloatingCube());
+  for (let i = 0; i < 360; i++) particles.push(new Particle());
+  for (let i = 0; i < 10; i++) rings.push(new GlowRing());
+  for (let i = 0; i < 6; i++) glowBands.push(new GlowBand());
+  for (let i = 0; i < 55; i++) extraObjects.push(new ExtraObject());
+  for (let i = 0; i < 90; i++) sparkles.push(new Sparkle());
+  for (let i = 0; i < 45; i++) petals.push(new Petal());
+  for (let i = 0; i < 28; i++) ribbons.push(new Ribbon());
+  for (let i = 0; i < 90; i++) beads.push(new Bead());
+}
+
+class GlowBand {
+  constructor() {
+    this.seed = random(1000);
+    this.col = random(['#091540', '#0A1232', '#0C1442', '#13215C']);
+  }
+  draw() {
+    push();
+    noStroke();
+    fill(red(color(this.col)), green(color(this.col)), blue(color(this.col)), 18);
+    rect(0, height * 0.48 + sin(t * 0.01 + this.seed) * 22, width, 24);
+    pop();
+  }
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  resetScene();
+}
+
+function keyPressed() {
+  if (key === 'r' || key === 'R') resetScene();
+  if (key === ' ') paused = !paused;
+}
