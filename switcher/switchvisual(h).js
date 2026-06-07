@@ -17,6 +17,27 @@
 // bouncer.lastActionText
 // --------------------------------------------------
 
+// Animation Helpers
+// Gives each bouncer its own offset 
+// so they don't all pulse / spin in perfect sync.
+function bouncePhase(bouncer){
+  return bouncer.x * 0.013 + bouncer.y * 0.017;
+}
+
+function bouncePulse (bouncer){
+  let phase = bouncePhase (bouncer);
+  return 1 + sin(frameCount * 0.08 + phase) * 0.08;
+}
+
+// Drum and bass slam; guitar medium and vocal/synth stay subtle
+function bounceHitStrength(bouncer) {
+  if (bouncer.type === "bassTrack" || bouncer.type === "bassMute") return 1.0;
+  if (bouncer.type === "drumTrack" || bouncer.type === "drumMute") return 1.0;
+  if (bouncer.type === "guitar") return 0.55;
+  if (bouncer.type === "vocal" || bouncer.type === "synth") return 0.2;
+  return 0.2;
+}
+
 
 // --------------------------------------------------
 // DRAW ONE BOUNCER
@@ -30,14 +51,15 @@ function drawOneBounceSwitcher(bouncer) {
 
   let colour = getBounceColour(bouncer.type);
   let isMuted = checkIfBouncerMuted(bouncer.type);
-  
-  // Apply grey filter if muted
+
+  // dim a muted track to about half brightness
   if (isMuted) {
     colour = [colour[0] * 0.5, colour[1] * 0.5, colour[2] * 0.5];
   }
 
   drawBounceGlow(bouncer, colour);
   drawBounceShape(bouncer, colour);
+  drawBounceSparks(bouncer, colour);
   drawBounceFlash(bouncer);
   drawBounceInsideLabel(bouncer);
 
@@ -54,11 +76,15 @@ function drawOneBounceSwitcher(bouncer) {
 function drawBounceGlow(bouncer, colour) {
   noStroke();
 
-  fill(colour[0], colour[1], colour[2], 45);
-  circle(0, 0, bouncer.size * 2.2);
+  let phase = bouncePhase (bouncer);
+  // glow opacity gently rises and falls
+  let breathe = 0.5 + 0.5 * sin(frameCount * 0.06 + phase);
 
-  fill(colour[0], colour[1], colour[2], 25);
-  circle(0, 0, bouncer.size * 3.4);
+  fill(colour[0], colour[1], colour[2], 30 + breathe * 30);
+  circle(0, 0, bouncer.size * 2.6);
+
+  fill(colour[0], colour[1], colour[2], 15 + breathe * 20);
+  circle(0, 0, bouncer.size * 3.8);
 }
 
 
@@ -67,6 +93,18 @@ function drawBounceGlow(bouncer, colour) {
 // --------------------------------------------------
 
 function drawBounceShape(bouncer, colour) {
+  let phase = bouncePhase (bouncer);
+  let pulse = bouncePulse (bouncer);
+  let strength = bounceHitStrength (bouncer);
+
+  let hitPop = 1 + bouncer.flash * 0.006 * strength;
+  let size  = bouncer.size * pulse * hitPop;
+
+  let spin = frameCount * 0.01 + phase + bouncer.flash * 0.018 * strength;
+
+  push ();
+  rotate(spin);
+
   noStroke();
   fill(colour[0], colour[1], colour[2], 235);
 
@@ -104,6 +142,38 @@ function drawBounceShape(bouncer, colour) {
     strokeWeight(2);
     circle(0, 0, bouncer.size * 1.25);
   }
+
+  pop();
+}
+
+// draw orbiting sparks
+// speed up and brighten after a wall hit 
+//-----------------------------------------------------
+function drawBounceSparks(bouncer, colour) {
+  let phase = bouncePhase(bouncer);
+  let strength = bounceHitStrength(bouncer);
+  let count = 3;
+
+  // orbit radius breathes and pushes outward on a hit (esp drum/bass)
+  let radius = 
+    bouncer.size * 0.85 * bouncePulse (bouncer) + 
+    bouncer.flash * 0.6 * strength;
+
+  // spin faster when flash is high after a bounce
+    let spin = frameCount * 0.04 + bouncer.flash * 0.05 * strength + phase;
+
+  //brighter on fresh hit
+    let alpha = 150 + bouncer.flash * (1 + strength);
+
+    noStroke();
+    fill(255, 255, alpha);
+
+    for (let i = 0; i < count; i++){
+      let a = spin + (TWO_PI / count) * i;
+      let sx = cos(a) * radius;
+      let sy = sin(a)* radius;
+      circle (sx, sy, bouncer.size * 0.12 + bouncer.flash * 0.06 * strength);
+    }
 }
 
 
@@ -112,10 +182,21 @@ function drawBounceShape(bouncer, colour) {
 // --------------------------------------------------
 
 function drawBounceFlash(bouncer) {
+  let strength = bounceHitStrength(bouncer);
+
   noFill();
   stroke(255, 160 + bouncer.flash);
   strokeWeight(2);
-  circle(0, 0, bouncer.size + bouncer.flash * 0.35);
+  circle(0, 0, bouncer.size + bouncer.flash * 0.35 * (1 + strength));
+
+
+  let wave = bouncer.flash * strength;
+  if (wave > 1){
+    let colour = getBounceColour (bouncer.type);
+    stroke(colour [0], colour [1], colour [2], wave * 2);
+    strokeWeight(3);
+    circle (0, 0, bouncer.size + wave * 2.2);
+  }
 }
 
 
@@ -160,26 +241,27 @@ function drawBounceActionText(bouncer) {
 // --------------------------------------------------
 
 function getBounceColour(type) {
-  if (type === "bassTrack") return [60, 150, 255];
-  if (type === "bassMute") return [30, 90, 180];
+  if (type === "bassTrack") return [50, 130, 255];
+  if (type === "bassMute") return [28, 70, 140];
 
-  if (type === "drumTrack") return [255, 90, 60];
-  if (type === "drumMute") return [170, 45, 35];
+  if (type === "drumTrack") return [255, 65, 55];
+  if (type === "drumMute") return [150, 35, 30];
 
-  if (type === "guitar") return [255, 215, 75];
+  if (type === "guitar") return [255, 200, 45];
 
-  if (type === "vocal") return [255, 90, 220];
+  if (type === "vocal") return [240, 75, 220];
 
-  if (type === "synth") return [80, 245, 255];
+  if (type === "synth") return [55, 235, 140];
 
   return [255, 255, 255];
 }
 
 
 // --------------------------------------------------
-// SHORT LABEL BY TYPE
+// IS THIS TRACK MUTED?
+// Reads mute state set by the logic file.
 // --------------------------------------------------
-
+ 
 function checkIfBouncerMuted(type) {
   if (type === "bassTrack" && typeof bassMuted !== "undefined") {
     return bassMuted;
@@ -197,6 +279,11 @@ function checkIfBouncerMuted(type) {
   }
   return false;
 }
+ 
+ 
+// --------------------------------------------------
+// SHORT LABEL BY TYPE
+// --------------------------------------------------
 
 function getBounceShortLabel(type) {
   if (type === "bassTrack") return "B";

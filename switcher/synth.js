@@ -2,80 +2,45 @@
 
 
 
-let synthOsc;
-let synthEnv;
+let synth;
 let synthReverb;
 let synthDelay;
-let synthLowPassFilter;
 
-let synthTypes = "sine";
-
-let synthVolumes = 0.2;
-
-
+let synthTypes = ["sine"];
+let synthVolume = 0.15;
 
 let activeSynthTypeIndex = 0;
-
-
-let synthMidiNote = [66, 71]; // F# and B note work over all the chord changes 
+let activeSynthNoteIndex = 0;
+let synthMidiNote = [71, 69, 66, 64, 62]; // B, A, F#, E, D
 
 function setupSynth() {
-  synthOsc = new p5.Oscillator();
+  synth = new p5.PolySynth();
 
-  synthOsc.setType(synthTypes[activeSynthTypeIndex]);
-  synthOsc.freq(midiToFreq(synthMidiNote[activeSynthTypeIndex]));
-  synthOsc.amp(0);
-  synthOsc.start();
-
-  synthEnv = new p5.Envelope();
-
-  /// https://p5js.org/reference/p5.PolySynth/noteADSR/ ///
-
-  synthEnv.setADSR(0.03, 0.15, 0.81 , 2.25);
+  setSynthType(activeSynthTypeIndex);
+  synth.setADSR(0.03, 0.15, 0.21, 1.25);
 
   synthReverb = new p5.Reverb();
-
-  synthReverb.process(synthOsc, 3, 2);
-
-  ///https://p5js.org/reference/p5.Reverb/set///
-
+  synthReverb.process(synth, 3, 2);
   synthReverb.set(3, 2, false);
-
   synthReverb.drywet(1.0);
 
-  synthEnv.setRange(synthVolumes[activeSynthTypeIndex], 0);
-
   synthDelay = new p5.Delay();
-
-  synthDelay.process(synthOsc, 0.5, 0.8, 2300);
-
-    synthLowPassFilter = new p5.LowPass();
-
-    synthOsc.disconnect();
-
-    synthOsc.connect(synthLowPassFilter);
-
-    synthLowPassFilter.freq(3000);
-
-
+  synthDelay.process(synth, 0.5, 0.2, 2300);
 }
 
 function setSynthType(index) {
-  activeSynthTypeIndex = index;
-
-  if (activeSynthTypeIndex< 0) {
-    activeSynthTypeIndex = 0;
-    }
-
-    if (activeSynthTypeIndex >= synthTypes.length) {
-        activeSynthTypeIndex = synthTypes.length - 1;
-        }
-
+  activeSynthTypeIndex = constrain(index, 0, synthTypes.length - 1);
   let type = synthTypes[activeSynthTypeIndex];
 
-  synthOsc.setType(type);
+  if (!synth || !Array.isArray(synth.audiovoices)) {
+    return;
+  }
 
-  synthEnv.setRange(synthVolumes[activeSynthTypeIndex], 0);
+  synth.audiovoices.forEach((voice) => {
+    if (voice && voice.oscillator && typeof voice.oscillator.setType === "function") {
+      voice.oscillator.setType(type);
+    }
+  });
 }
 
 function nextSynthType() {
@@ -88,20 +53,30 @@ function nextSynthType() {
   setSynthType(activeSynthTypeIndex);
 }
 
-function setSynthMidiNote(midiNote) {
-  synthMidiNote = midiNote;
+function setSynthNote(index) {
+  activeSynthNoteIndex = constrain(index, 0, synthMidiNote.length - 1);
 }
 
-function playSynthNote() {
+function setSynthMidiNote(midiNoteValue) {
+  let foundIndex = synthMidiNote.indexOf(midiNoteValue);
+  if (foundIndex >= 0) {
+    activeSynthNoteIndex = foundIndex;
+  } else {
+    synthMidiNote[activeSynthNoteIndex] = midiNoteValue;
+  }
+}
+
+function playSynthNote(index) {
   userStartAudio();
 
-  let freq = midiToFreq(synthMidiNote[activeSynthTypeIndex]);
+  if (typeof index !== "undefined") {
+    setSynthNote(index);
+  }
 
-  synthOsc.freq(freq);
-
-  synthEnv.setRange(synthVolumes[activeSynthTypeIndex], 0);
-
-  synthEnv.play(synthOsc);
+  let midiNumber = synthMidiNote[activeSynthNoteIndex];
+  if (typeof synth !== "undefined" && typeof synth.play === "function") {
+    synth.play(midiToFreq(midiNumber), synthVolume, 0, 1.2);
+  }
 }
 function getCurrentSynthType() {
   return synthTypes[activeSynthTypeIndex];
