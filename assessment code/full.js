@@ -1,187 +1,180 @@
 // --------------------------------------------------
-// TEAMMATE VISUAL LAYER - ADVANCED AUDIO REACTIVE VERSION
+// FINAL AUDIO-REACTIVE VISUAL LAYER
+// Copy-paste this as teammateVisual.js
 //
 // This file should NOT contain setup() or draw().
 // testvis.js should call:
+//
 // mv_setup();
 // mv_hookHits();
 // mv_draw();
-//
-// This file uses:
-// wholeSubBassEnergy
-// wholeBassEnergy
-// wholeLowMidEnergy
-// wholeMidEnergy
-// wholePresenceEnergy
-// wholeHighEnergy
-// wholeCentroidFreq
-// wholeSpectrum
-//
-// It also uses:
-// vocalFreq
-// vocalNoteName
-// vocalMuted
-//
-// It hooks:
-// createBassVisual()
-// createDrumVisual()
-// createGuitarVisual()
-// createStringsVisual()
-// playSynthNote()
 // --------------------------------------------------
 
 
 // --------------------------------------------------
-// MAIN VISUAL STATE
+// GLOBAL STATE
 // --------------------------------------------------
+
+let mv_ready = false;
+let mv_t = 0;
 
 let mv_particles = [];
-let mv_glowDots = [];
-let mv_orbiters = [];
-let mv_pendulums = [];
-let mv_ripples = [];
-let mv_shards = [];
-let mv_pRings = [];
 let mv_hexCells = [];
-
+let mv_orbiters = [];
+let mv_bassWaves = [];
+let mv_drumShards = [];
+let mv_drumBursts = [];
 let mv_guitarTrails = [];
 let mv_stringWaves = [];
 
-let mv_t = 0;
-let mv_nOff = 0;
-let mv_ready = false;
-
-let mv_bassGravityPulse = 0;
-let mv_drumImpactPulse = 0;
+let mv_bassHitPulse = 0;
+let mv_drumHitPulse = 0;
+let mv_guitarHitPulse = 0;
+let mv_stringsHitPulse = 0;
 let mv_synthPulse = 0;
+
+let mv_wholeRingRotation = 0;
+let mv_synthRingRotation1 = 0;
+let mv_synthRingRotation2 = 0;
+
+let mv_hitsHooked = false;
 let mv_synthHooked = false;
 
 
 // --------------------------------------------------
-// COLOUR PALETTE
+// COLOURS
 // --------------------------------------------------
 
-let MV_COLS = [
-  [255, 20, 90],
-  [255, 100, 20],
-  [255, 210, 20],
-  [100, 255, 20],
-  [20, 255, 140],
-  [20, 200, 255],
-  [20, 100, 255],
-  [160, 20, 255],
-  [255, 20, 200],
-  [255, 80, 140],
-  [0, 255, 200],
-  [255, 240, 60],
-  [80, 200, 255],
-  [200, 80, 255],
-  [255, 160, 60],
-  [60, 255, 160],
-  [255, 60, 255],
-  [60, 255, 255],
-  [200, 255, 60],
-  [255, 255, 60]
-];
+let MV_DEEP_BG = [4, 6, 22];
+
+let MV_BASS_BLUE = [60, 150, 255];
+let MV_BASS_CYAN = [40, 240, 255];
+
+let MV_DRUM_RED = [255, 70, 60];
+let MV_DRUM_ORANGE = [255, 135, 45];
+
+let MV_GUITAR_GOLD = [255, 215, 75];
+let MV_GUITAR_YELLOW = [255, 245, 150];
+
+let MV_STRINGS_PURPLE = [190, 110, 255];
+let MV_STRINGS_PINK = [255, 120, 230];
+
+let MV_SYNTH_CYAN = [80, 245, 255];
+let MV_SYNTH_PINK = [255, 80, 220];
+
+let MV_GREEN = [120, 255, 160];
+
+let MV_WHITE = [255, 255, 255];
 
 
 // --------------------------------------------------
-// SMALL HELPERS
+// SAFE OUTPUT HELPERS
 // --------------------------------------------------
 
-function mv_hsl(h, s, l) {
-  s /= 100;
-  l /= 100;
-
-  let a = s * min(l, 1 - l);
-
-  function f(n) {
-    let k = (n + h / 30) % 12;
-    return l - a * max(-1, min(k - 3, 9 - k, 1));
+function mv_energy(value) {
+  if (typeof value === "undefined") {
+    return 0;
   }
 
-  return [f(0) * 255, f(8) * 255, f(4) * 255];
+  return constrain(value / 255, 0, 1);
 }
 
-
-function mv_rc() {
-  return random(MV_COLS);
-}
-
-
-function mv_E(v) {
-  return typeof v !== "undefined" ? constrain(v / 255, 0, 1) : 0;
-}
-
-
-// --------------------------------------------------
-// WHOLE FFT HELPERS
-// --------------------------------------------------
-
-function mv_Sub() {
-  return mv_E(
-    typeof wholeSubBassEnergy !== "undefined"
-      ? wholeSubBassEnergy
-      : 0
+function mv_sub() {
+  return mv_energy(
+    typeof wholeSubBassEnergy !== "undefined" ? wholeSubBassEnergy : 0
   );
 }
 
-
-function mv_B() {
-  return mv_E(
-    typeof wholeBassEnergy !== "undefined"
-      ? wholeBassEnergy
-      : 0
+function mv_bass() {
+  return mv_energy(
+    typeof wholeBassEnergy !== "undefined" ? wholeBassEnergy : 0
   );
 }
 
-
-function mv_LowMid() {
-  return mv_E(
-    typeof wholeLowMidEnergy !== "undefined"
-      ? wholeLowMidEnergy
-      : 0
+function mv_lowMid() {
+  return mv_energy(
+    typeof wholeLowMidEnergy !== "undefined" ? wholeLowMidEnergy : 0
   );
 }
 
-
-function mv_M() {
-  return mv_E(
-    typeof wholeMidEnergy !== "undefined"
-      ? wholeMidEnergy
-      : 0
+function mv_mid() {
+  return mv_energy(
+    typeof wholeMidEnergy !== "undefined" ? wholeMidEnergy : 0
   );
 }
 
-
-function mv_Presence() {
-  return mv_E(
-    typeof wholePresenceEnergy !== "undefined"
-      ? wholePresenceEnergy
-      : 0
+function mv_presence() {
+  return mv_energy(
+    typeof wholePresenceEnergy !== "undefined" ? wholePresenceEnergy : 0
   );
 }
 
-
-function mv_H() {
-  return mv_E(
-    typeof wholeHighEnergy !== "undefined"
-      ? wholeHighEnergy
-      : 0
+function mv_high() {
+  return mv_energy(
+    typeof wholeHighEnergy !== "undefined" ? wholeHighEnergy : 0
   );
 }
 
+function mv_centroid() {
+  if (typeof wholeCentroidFreq === "undefined") {
+    return 0;
+  }
 
-function mv_C() {
-  return typeof wholeCentroidFreq !== "undefined"
-    ? constrain(map(wholeCentroidFreq, 200, 6000, 0, 1), 0, 1)
-    : 0;
+  return constrain(map(wholeCentroidFreq, 200, 6000, 0, 1), 0, 1);
 }
 
+function mv_synth1Amount() {
+  let mid = typeof synth1MidEnergy !== "undefined" ? synth1MidEnergy : 0;
+  let high = typeof synth1HighEnergy !== "undefined" ? synth1HighEnergy : 0;
 
-// --------------------------------------------------
-// NOTE COLOUR FOR VOCAL PLANETS
-// --------------------------------------------------
+  return constrain((mid + high) / 510, 0, 1);
+}
+
+function mv_synth2Amount() {
+  let lowMid =
+    typeof synth2LowMidEnergy !== "undefined" ? synth2LowMidEnergy : 0;
+
+  let presence =
+    typeof synth2PresenceEnergy !== "undefined" ? synth2PresenceEnergy : 0;
+
+  return constrain((lowMid + presence) / 510, 0, 1);
+}
+
+function mv_synth1HighAmount() {
+  return mv_energy(
+    typeof synth1HighEnergy !== "undefined" ? synth1HighEnergy : 0
+  );
+}
+
+function mv_synth2HighAmount() {
+  return mv_energy(
+    typeof synth2HighEnergy !== "undefined" ? synth2HighEnergy : 0
+  );
+}
+
+function mv_synth1Centroid() {
+  if (typeof synth1CentroidFreq === "undefined") {
+    return 0;
+  }
+
+  return constrain(map(synth1CentroidFreq, 0, 8000, 0, 1), 0, 1);
+}
+
+function mv_synth2Centroid() {
+  if (typeof synth2CentroidFreq === "undefined") {
+    return 0;
+  }
+
+  return constrain(map(synth2CentroidFreq, 0, 8000, 0, 1), 0, 1);
+}
+
+function mv_lerpColour(a, b, amt) {
+  return [
+    lerp(a[0], b[0], amt),
+    lerp(a[1], b[1], amt),
+    lerp(a[2], b[2], amt)
+  ];
+}
 
 function mv_noteColour(noteName) {
   if (noteName === "C") return [255, 70, 90];
@@ -202,67 +195,61 @@ function mv_noteColour(noteName) {
 
 
 // --------------------------------------------------
-// SETUP VISUAL
-// Called from testvis.js setup()
+// SETUP VISUAL SYSTEM
 // --------------------------------------------------
 
 function mv_setup() {
   mv_ready = true;
   mv_t = 0;
-  mv_nOff = random(1000);
 
   mv_particles = [];
-  mv_glowDots = [];
-  mv_orbiters = [];
-  mv_pendulums = [];
-  mv_ripples = [];
-  mv_shards = [];
-  mv_pRings = [];
   mv_hexCells = [];
+  mv_orbiters = [];
+  mv_bassWaves = [];
+  mv_drumShards = [];
+  mv_drumBursts = [];
   mv_guitarTrails = [];
   mv_stringWaves = [];
 
-  mv_bassGravityPulse = 0;
-  mv_drumImpactPulse = 0;
+  mv_bassHitPulse = 0;
+  mv_drumHitPulse = 0;
+  mv_guitarHitPulse = 0;
+  mv_stringsHitPulse = 0;
   mv_synthPulse = 0;
 
-  let sz = 55;
-  let cols = ceil(width / (sz * 1.73)) + 2;
-  let rows = ceil(height / (sz * 1.5)) + 2;
+  mv_wholeRingRotation = 0;
+  mv_synthRingRotation1 = 0;
+  mv_synthRingRotation2 = 0;
 
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
+  let hexSize = 58;
+  let cols = ceil(width / (hexSize * 1.73)) + 3;
+  let rows = ceil(height / (hexSize * 1.5)) + 3;
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
       mv_hexCells.push({
-        x: c * sz * 1.73 + (r % 2) * sz * 0.866,
-        y: r * sz * 1.5,
-        sz: sz,
-        s: random(1000),
-        col: mv_rc()
+        x: col * hexSize * 1.73 + (row % 2) * hexSize * 0.866,
+        y: row * hexSize * 1.5,
+        size: hexSize,
+        row: row,
+        col: col,
+        index: row * cols + col
       });
     }
   }
 
-  for (let i = 0; i < 900; i++) {
-    mv_particles.push(new MV_Particle());
+  for (let i = 0; i < 360; i++) {
+    mv_particles.push(new MV_AudioParticle(i));
   }
 
-  for (let i = 0; i < 60; i++) {
-    mv_glowDots.push(new MV_GlowDot());
-  }
-
-  for (let i = 0; i < 10; i++) {
-    mv_pendulums.push(new MV_Pendulum());
-  }
-
-  for (let i = 0; i < 50; i++) {
-    mv_orbiters.push(new MV_Orbiter());
+  for (let i = 0; i < 30; i++) {
+    mv_orbiters.push(new MV_AudioOrbiter(i));
   }
 }
 
 
 // --------------------------------------------------
-// MAIN DRAW VISUAL
-// Called from testvis.js draw()
+// MAIN DRAW FUNCTION
 // --------------------------------------------------
 
 function mv_draw() {
@@ -275,251 +262,228 @@ function mv_draw() {
   }
 
   mv_t++;
-  mv_nOff += 0.0006;
 
-  let sub = mv_Sub();
-  let b = mv_B();
-  let lowMid = mv_LowMid();
-  let m = mv_M();
-  let presence = mv_Presence();
-  let h = mv_H();
-  let c = mv_C();
+  let sub = mv_sub();
+  let bass = mv_bass();
+  let lowMid = mv_lowMid();
+  let mid = mv_mid();
+  let presence = mv_presence();
+  let high = mv_high();
+  let centroid = mv_centroid();
 
-  mv_bassGravityPulse *= 0.92;
-  mv_drumImpactPulse *= 0.88;
+  let synth1 = mv_synth1Amount();
+  let synth2 = mv_synth2Amount();
+
+  mv_bassHitPulse *= 0.92;
+  mv_drumHitPulse *= 0.88;
+  mv_guitarHitPulse *= 0.9;
+  mv_stringsHitPulse *= 0.94;
   mv_synthPulse *= 0.9;
 
-  // full mix atmosphere
-  mv_drawAurora(b, m, c);
-  mv_drawHex(b + sub * 0.4, lowMid);
-  mv_drawPlasma(b, m + presence * 0.5);
-  mv_drawPRings();
+  mv_drawWorldBackground(sub, bass, lowMid, mid, presence, high, centroid);
+  mv_drawBassBlueWorld(sub, bass);
+  mv_drawHexGrid(lowMid, presence, centroid);
+  mv_drawAuroraLayer(mid, presence, high, centroid);
 
-  // stronger whole-output layers
-  mv_drawBassGravity(sub, b);
-  mv_drawWholeSpectrumRing(b, h, c);
+  mv_drawWholeSpectrumRing(bass, high, centroid);
+  mv_drawSynthFFTRings(synth1, synth2);
 
-  // original moving objects
-  for (let p of mv_particles) {
-    p.update(b, m);
-    p.show();
-  }
+  mv_drawOrbiters(bass, mid, high, synth1, synth2);
+  mv_drawParticles(bass, mid, presence, high);
 
-  for (let g of mv_glowDots) {
-    g.update();
-    g.show(h);
-  }
-
-  for (let p of mv_pendulums) {
-    p.update(b + sub * 0.8);
-    p.show();
-  }
-
-  for (let o of mv_orbiters) {
-    o.update(b, m, h);
-    o.show();
-  }
-
-  // event layers
+  mv_drawBassWaves();
+  mv_drawDrumBursts();
+  mv_drawDrumShards();
   mv_drawGuitarTrails();
   mv_drawStringWaves();
 
-  for (let i = mv_ripples.length - 1; i >= 0; i--) {
-    mv_ripples[i].update();
-    mv_ripples[i].show();
-
-    if (mv_ripples[i].done) {
-      mv_ripples.splice(i, 1);
-    }
-  }
-
-  for (let i = mv_shards.length - 1; i >= 0; i--) {
-    mv_shards[i].update();
-    mv_shards[i].show();
-
-    if (mv_shards[i].done) {
-      mv_shards.splice(i, 1);
-    }
-  }
-
-  // special outputs
   mv_drawSynthSignal();
   mv_drawVocalPlanets();
 
-  // bottom spectrum
-  mv_drawSpectrumBar(b, c);
+  mv_drawBottomSpectrum(bass, high, centroid);
 }
 
 
 // --------------------------------------------------
-// AURORA - WHOLE FFT ATMOSPHERE
+// FULL MIX BACKGROUND
 // --------------------------------------------------
 
-function mv_drawAurora(b, m, c) {
-  noFill();
-
-  for (let a = 0; a < 8; a++) {
-    let hue = (a * 36 + mv_t * 0.25 + c * 120) % 360;
-    let col = mv_hsl(hue, 90, 62);
-
-    stroke(col[0], col[1], col[2], 9 + b * 14);
-    strokeWeight(1.8);
-
-    beginShape();
-
-    for (let x = -20; x <= width + 20; x += 16) {
-      let n = noise(x * 0.0013, a * 0.55 + mv_nOff);
-      let y = map(n, 0, 1, height * 0.02, height * 0.98);
-
-      y += sin(mv_t * 0.006 + a * 1.2 + x * 0.009) * (22 + b * 28);
-
-      curveVertex(x, y);
-    }
-
-    endShape();
-  }
-}
-
-
-// --------------------------------------------------
-// HEX GRID - LOW/MID BODY
-// --------------------------------------------------
-
-function mv_drawHex(b, lowMid) {
-  noFill();
-
-  for (let h of mv_hexCells) {
-    let pulse = noise(h.s, mv_t * 0.007);
-    let hue = (mv_t * 0.35 + h.s * 0.18 + lowMid * 80) % 360;
-    let col = mv_hsl(hue, 80, 60);
-
-    stroke(
-      col[0],
-      col[1],
-      col[2],
-      map(pulse, 0, 1, 2, 12 + b * 20 + lowMid * 25)
-    );
-
-    strokeWeight(0.7 + b * 0.5 + lowMid * 1.2);
-
-    beginShape();
-
-    for (let i = 0; i < 6; i++) {
-      let ang = map(i, 0, 6, 0, TWO_PI) - PI / 6;
-      let r = h.sz * (0.82 + pulse * 0.2 + b * 0.16 + lowMid * 0.12);
-
-      vertex(
-        h.x + cos(ang) * r,
-        h.y + sin(ang) * r
-      );
-    }
-
-    endShape(CLOSE);
-  }
-}
-
-
-// --------------------------------------------------
-// PLASMA - MID/PRESENCE ATMOSPHERE
-// --------------------------------------------------
-
-function mv_drawPlasma(b, m) {
-  let step = 36;
+function mv_drawWorldBackground(sub, bass, lowMid, mid, presence, high, centroid) {
+  push();
 
   noStroke();
 
-  for (let x = 0; x < width; x += step) {
-    for (let y = 0; y < height; y += step) {
-      let v =
-        sin(x * 0.02 + mv_t * 0.025) +
-        sin(y * 0.02 + mv_t * 0.022) +
-        sin((x + y) * 0.014 + mv_t * 0.018) +
-        sin(dist(x, y, width * 0.5, height * 0.5) * 0.022 - mv_t * 0.035);
+  let base = mv_lerpColour([4, 6, 22], [10, 18, 48], bass);
+  let warm = mv_lerpColour(base, [45, 10, 55], centroid * 0.7);
 
-      let hue = (v * 42 + mv_t * 0.7 + b * 60 + m * 80 + 180) % 360;
-      let col = mv_hsl(hue, 100, 58);
+  fill(warm[0], warm[1], warm[2], 105);
+  rect(0, 0, width, height);
 
-      fill(col[0], col[1], col[2], 5 + b * 6 + m * 4);
-      rect(x, y, step, step);
-    }
-  }
-}
-
-
-// --------------------------------------------------
-// RANDOM PULSE RINGS
-// --------------------------------------------------
-
-function mv_drawPRings() {
-  if (mv_t % 65 === 0) {
-    mv_pRings.push({
-      x: random(width),
-      y: random(height),
-      r: 0,
-      col: mv_rc(),
-      life: 200
-    });
-  }
-
-  for (let i = mv_pRings.length - 1; i >= 0; i--) {
-    let p = mv_pRings[i];
-
-    p.r += 2.5 + mv_B() * 5;
-    p.life -= 2;
-
-    stroke(
-      p.col[0],
-      p.col[1],
-      p.col[2],
-      map(p.life, 0, 200, 0, 60)
-    );
-
-    strokeWeight(1.5);
-    noFill();
-
-    circle(p.x, p.y, p.r * 2);
-
-    if (p.life <= 0) {
-      mv_pRings.splice(i, 1);
-    }
-  }
-}
-
-
-// --------------------------------------------------
-// BASS / SUB BASS = GRAVITY FIELD
-// --------------------------------------------------
-
-function mv_drawBassGravity(sub, b) {
-  push();
-
-  translate(width / 2, height / 2);
-  noFill();
   blendMode(ADD);
 
-  let pulse = sub * 180 + mv_bassGravityPulse * 140;
+  fill(30, 105, 255, 18 + bass * 35 + mv_bassHitPulse * 40);
+  circle(
+    width / 2,
+    height / 2,
+    420 + sub * 320 + bass * 260 + mv_bassHitPulse * 260
+  );
 
-  stroke(70, 145, 255, 35 + sub * 90);
-  strokeWeight(2 + sub * 5);
-  circle(0, 0, 260 + pulse);
+  fill(255, 60, 210, 8 + high * 26 + centroid * 18);
+  circle(
+    width * 0.7,
+    height * 0.25,
+    240 + high * 250 + centroid * 160
+  );
 
-  stroke(20, 200, 255, 22 + b * 70);
-  strokeWeight(1.5);
-  circle(0, 0, 380 + b * 240);
-
-  stroke(255, 255, 255, 12 + mv_bassGravityPulse * 80);
-  strokeWeight(1);
-  circle(0, 0, 520 + mv_bassGravityPulse * 260);
+  fill(50, 255, 190, 8 + presence * 30);
+  circle(
+    width * 0.22,
+    height * 0.5,
+    220 + presence * 320 + mid * 120
+  );
 
   pop();
 }
 
 
 // --------------------------------------------------
-// WHOLE FFT = CIRCULAR SPECTRUM RING
+// BASS WORLD
 // --------------------------------------------------
 
-function mv_drawWholeSpectrumRing(b, h, c) {
+function mv_drawBassBlueWorld(sub, bass) {
+  push();
+
+  translate(width / 2, height / 2);
+  blendMode(ADD);
+  noFill();
+
+  let deepPressure = sub * 190 + bass * 90 + mv_bassHitPulse * 280;
+
+  stroke(50, 150, 255, 35 + sub * 110);
+  strokeWeight(2 + sub * 6);
+  circle(0, 0, 270 + deepPressure);
+
+  stroke(60, 235, 255, 25 + bass * 95);
+  strokeWeight(1.5 + bass * 3);
+  circle(0, 0, 400 + bass * 260 + mv_bassHitPulse * 170);
+
+  stroke(255, 255, 255, 12 + mv_bassHitPulse * 100);
+  strokeWeight(1);
+  circle(0, 0, 560 + mv_bassHitPulse * 340);
+
+  pop();
+}
+
+
+// --------------------------------------------------
+// HEX GRID
+// --------------------------------------------------
+
+function mv_drawHexGrid(lowMid, presence, centroid) {
+  push();
+
+  noFill();
+  blendMode(ADD);
+
+  for (let cell of mv_hexCells) {
+    let d = dist(cell.x, cell.y, width / 2, height / 2);
+
+    let wave =
+      sin(d * 0.018 - mv_t * (0.015 + lowMid * 0.04)) * 0.5 + 0.5;
+
+    let sizeControl =
+      0.62 +
+      wave * 0.16 +
+      lowMid * 0.28 +
+      presence * 0.14 +
+      mv_bassHitPulse * 0.12;
+
+    let colourShift = (centroid + cell.index * 0.005) % 1;
+    let col = mv_lerpColour(MV_BASS_CYAN, MV_SYNTH_PINK, colourShift);
+
+    stroke(
+      col[0],
+      col[1],
+      col[2],
+      7 + lowMid * 45 + presence * 35
+    );
+
+    strokeWeight(0.45 + lowMid * 2.6 + presence * 1.5);
+
+    beginShape();
+
+    for (let i = 0; i < 6; i++) {
+      let a = map(i, 0, 6, 0, TWO_PI) - PI / 6;
+      let r = cell.size * sizeControl;
+
+      vertex(cell.x + cos(a) * r, cell.y + sin(a) * r);
+    }
+
+    endShape(CLOSE);
+  }
+
+  pop();
+}
+
+
+// --------------------------------------------------
+// AURORA
+// --------------------------------------------------
+
+function mv_drawAuroraLayer(mid, presence, high, centroid) {
+  push();
+
+  noFill();
+  blendMode(ADD);
+
+  for (let layer = 0; layer < 7; layer++) {
+    let col = mv_lerpColour(
+      MV_BASS_CYAN,
+      layer % 2 === 0 ? MV_SYNTH_PINK : MV_GREEN,
+      (centroid + layer * 0.12) % 1
+    );
+
+    stroke(
+      col[0],
+      col[1],
+      col[2],
+      12 + mid * 30 + presence * 35 + high * 20
+    );
+
+    strokeWeight(1 + presence * 2.2);
+
+    beginShape();
+
+    for (let x = -30; x <= width + 30; x += 18) {
+      let yBase = map(layer, 0, 6, height * 0.08, height * 0.78);
+
+      let motion =
+        sin(
+          x * (0.005 + centroid * 0.004) +
+          mv_t * (0.006 + mid * 0.04) +
+          layer * 0.8
+        ) *
+        (24 + mid * 95);
+
+      let sharp =
+        sin(x * 0.018 - mv_t * (0.012 + presence * 0.03)) *
+        (8 + presence * 42);
+
+      curveVertex(x, yBase + motion + sharp);
+    }
+
+    endShape();
+  }
+
+  pop();
+}
+
+
+// --------------------------------------------------
+// WHOLE SPECTRUM RING
+// --------------------------------------------------
+
+function mv_drawWholeSpectrumRing(bass, high, centroid) {
   if (
     typeof wholeSpectrum === "undefined" ||
     !wholeSpectrum ||
@@ -531,26 +495,31 @@ function mv_drawWholeSpectrumRing(b, h, c) {
   push();
 
   translate(width / 2, height / 2);
-  rotate(mv_t * 0.002 + c * 0.5);
 
-  noFill();
+  mv_wholeRingRotation += 0.001 + centroid * 0.012 + high * 0.008;
+  rotate(mv_wholeRingRotation);
+
   blendMode(ADD);
+  noFill();
 
   let bins = min(wholeSpectrum.length, 512);
-  let step = max(1, floor(bins / 150));
+  let step = max(1, floor(bins / 160));
 
-  let col = mv_hsl(190 + c * 130, 100, 62);
+  let col = mv_lerpColour(MV_BASS_CYAN, MV_SYNTH_PINK, centroid);
 
-  stroke(col[0], col[1], col[2], 80 + h * 120);
-  strokeWeight(1.5 + h * 2);
+  stroke(col[0], col[1], col[2], 90 + high * 120);
+  strokeWeight(1.4 + high * 2.6);
 
   beginShape();
 
   for (let i = 0; i < bins; i += step) {
-    let amp = wholeSpectrum[i];
     let angle = map(i, 0, bins, 0, TWO_PI);
+    let amp = wholeSpectrum[i];
 
-    let radius = 170 + map(amp, 0, 255, 0, 155) + b * 55;
+    let radius =
+      170 +
+      bass * 70 +
+      map(amp, 0, 255, 0, 165);
 
     let x = cos(angle) * radius;
     let y = sin(angle) * radius;
@@ -565,83 +534,123 @@ function mv_drawWholeSpectrumRing(b, h, c) {
 
 
 // --------------------------------------------------
-// BOTTOM SPECTRUM BAR
+// SYNTH / PIANO FFT RINGS
 // --------------------------------------------------
 
-function mv_drawSpectrumBar(b, c) {
+function mv_drawSynthFFTRings(synth1, synth2) {
   if (
-    typeof wholeSpectrum === "undefined" ||
-    !wholeSpectrum ||
-    wholeSpectrum.length === 0
+    typeof synth1Spectrum === "undefined" ||
+    typeof synth2Spectrum === "undefined"
   ) {
     return;
   }
 
-  let bins = min(wholeSpectrum.length, 256);
+  let c1 = mv_synth1Centroid();
+  let c2 = mv_synth2Centroid();
 
-  noStroke();
+  let h1 = mv_synth1HighAmount();
+  let h2 = mv_synth2HighAmount();
 
-  for (let i = 0; i < bins; i++) {
-    let amp = wholeSpectrum[i];
-    let barH = map(amp, 0, 255, 0, height * 0.3 * (1 + b * 0.7));
-    let x = map(i, 0, bins, 0, width);
-    let w2 = width / bins + 1;
-    let hue = (map(i, 0, bins, 180, 320) + mv_t * 0.4 + c * 80) % 360;
-    let col = mv_hsl(hue, 100, 62);
+  mv_synthRingRotation1 += 0.002 + c1 * 0.018 + synth1 * 0.01;
+  mv_synthRingRotation2 -= 0.002 + c2 * 0.02 + synth2 * 0.012;
 
-    fill(col[0], col[1], col[2], 50 + b * 60);
-    rect(x, height - barH, w2, barH);
+  mv_drawSpectrumCircle(
+    synth1Spectrum,
+    width / 2,
+    height / 2,
+    125 + synth1 * 110,
+    50 + synth1 * 80,
+    mv_synthRingRotation1,
+    MV_SYNTH_CYAN,
+    70 + h1 * 140
+  );
+
+  mv_drawSpectrumCircle(
+    synth2Spectrum,
+    width / 2,
+    height / 2,
+    90 + synth2 * 95,
+    45 + synth2 * 75,
+    mv_synthRingRotation2,
+    MV_SYNTH_PINK,
+    70 + h2 * 140
+  );
+}
+
+function mv_drawSpectrumCircle(
+  spectrum,
+  cx,
+  cy,
+  baseRadius,
+  movementAmount,
+  rotationAmount,
+  colour,
+  alpha
+) {
+  if (!spectrum || spectrum.length === 0) {
+    return;
+  }
+
+  push();
+
+  translate(cx, cy);
+  rotate(rotationAmount);
+  blendMode(ADD);
+
+  noFill();
+  stroke(colour[0], colour[1], colour[2], alpha);
+  strokeWeight(1.8);
+
+  beginShape();
+
+  let bins = min(spectrum.length, 512);
+  let step = max(1, floor(bins / 120));
+
+  for (let i = 0; i < bins; i += step) {
+    let angle = map(i, 0, bins, 0, TWO_PI);
+    let amp = spectrum[i];
+
+    let radius = baseRadius + map(amp, 0, 255, 0, movementAmount);
+
+    curveVertex(cos(angle) * radius, sin(angle) * radius);
+  }
+
+  endShape(CLOSE);
+
+  pop();
+}
+
+
+// --------------------------------------------------
+// OBJECT SYSTEMS
+// --------------------------------------------------
+
+function mv_drawOrbiters(bass, mid, high, synth1, synth2) {
+  for (let orb of mv_orbiters) {
+    orb.update(bass, mid, high, synth1, synth2);
+    orb.show(bass, high, synth1, synth2);
+  }
+}
+
+function mv_drawParticles(bass, mid, presence, high) {
+  for (let p of mv_particles) {
+    p.update(mid, presence, high);
+    p.show(high, presence);
   }
 }
 
 
 // --------------------------------------------------
-// GUITAR = GOLDEN TRAILS
+// BASS WAVES
 // --------------------------------------------------
 
-function mv_drawGuitarTrails() {
-  for (let i = mv_guitarTrails.length - 1; i >= 0; i--) {
-    let tr = mv_guitarTrails[i];
+function mv_drawBassWaves() {
+  for (let i = mv_bassWaves.length - 1; i >= 0; i--) {
+    let wave = mv_bassWaves[i];
 
-    let a = map(tr.life, 0, tr.maxLife, 0, tr.alpha);
-
-    push();
-
-    blendMode(ADD);
-    noFill();
-
-    stroke(255, 210, 80, a);
-    strokeWeight(tr.weight);
-
-    beginShape();
-    curveVertex(tr.x1, tr.y1);
-    curveVertex(tr.x1, tr.y1);
-    curveVertex(tr.cx, tr.cy);
-    curveVertex(tr.x2, tr.y2);
-    curveVertex(tr.x2, tr.y2);
-    endShape();
-
-    pop();
-
-    tr.life--;
-
-    if (tr.life <= 0) {
-      mv_guitarTrails.splice(i, 1);
-    }
-  }
-}
-
-
-// --------------------------------------------------
-// STRINGS = SLOW PURPLE WAVES
-// --------------------------------------------------
-
-function mv_drawStringWaves() {
-  for (let i = mv_stringWaves.length - 1; i >= 0; i--) {
-    let w = mv_stringWaves[i];
-
-    let a = map(w.life, 0, w.maxLife, 0, w.alpha);
-    let progress = 1 - w.life / w.maxLife;
+    wave.life--;
+    let progress = 1 - wave.life / wave.maxLife;
+    let alpha = map(wave.life, 0, wave.maxLife, 0, wave.alpha);
 
     push();
 
@@ -649,28 +658,167 @@ function mv_drawStringWaves() {
     blendMode(ADD);
     noFill();
 
-    stroke(190, 110, 255, a);
-    strokeWeight(1.5);
+    stroke(MV_BASS_BLUE[0], MV_BASS_BLUE[1], MV_BASS_BLUE[2], alpha);
+    strokeWeight(2 + wave.velocity * 4);
+    circle(0, 0, wave.radius + progress * wave.expansion);
 
-    let radius = w.radius + progress * 280;
+    stroke(MV_BASS_CYAN[0], MV_BASS_CYAN[1], MV_BASS_CYAN[2], alpha * 0.6);
+    strokeWeight(1);
+    circle(0, 0, wave.radius * 0.65 + progress * wave.expansion * 0.7);
+
+    pop();
+
+    if (wave.life <= 0) {
+      mv_bassWaves.splice(i, 1);
+    }
+  }
+}
+
+
+// --------------------------------------------------
+// DRUM BURSTS / SHARDS
+// --------------------------------------------------
+
+function mv_drawDrumBursts() {
+  for (let i = mv_drumBursts.length - 1; i >= 0; i--) {
+    let burst = mv_drumBursts[i];
+
+    burst.life--;
+
+    let alpha = map(burst.life, 0, burst.maxLife, 0, burst.alpha);
+    let progress = 1 - burst.life / burst.maxLife;
+
+    push();
+
+    translate(burst.x, burst.y);
+    blendMode(ADD);
+    noFill();
+
+    stroke(MV_DRUM_RED[0], MV_DRUM_RED[1], MV_DRUM_RED[2], alpha);
+    strokeWeight(2 + burst.velocity * 3);
+
+    let size = burst.size + progress * burst.size * 2.4;
+
+    rectMode(CENTER);
+    rotate(burst.rotation + progress * 1.2);
+    rect(0, 0, size, size, 3);
+
+    stroke(MV_DRUM_ORANGE[0], MV_DRUM_ORANGE[1], MV_DRUM_ORANGE[2], alpha * 0.8);
+    line(-size * 0.7, 0, size * 0.7, 0);
+    line(0, -size * 0.7, 0, size * 0.7);
+
+    pop();
+
+    if (burst.life <= 0) {
+      mv_drumBursts.splice(i, 1);
+    }
+  }
+}
+
+function mv_drawDrumShards() {
+  for (let i = mv_drumShards.length - 1; i >= 0; i--) {
+    let shard = mv_drumShards[i];
+
+    shard.update();
+    shard.show();
+
+    if (shard.done) {
+      mv_drumShards.splice(i, 1);
+    }
+  }
+}
+
+
+// --------------------------------------------------
+// GUITAR TRAILS
+// --------------------------------------------------
+
+function mv_drawGuitarTrails() {
+  for (let i = mv_guitarTrails.length - 1; i >= 0; i--) {
+    let trail = mv_guitarTrails[i];
+
+    trail.life--;
+
+    let alpha = map(trail.life, 0, trail.maxLife, 0, trail.alpha);
+    let progress = 1 - trail.life / trail.maxLife;
+
+    push();
+
+    blendMode(ADD);
+    noFill();
+
+    stroke(MV_GUITAR_GOLD[0], MV_GUITAR_GOLD[1], MV_GUITAR_GOLD[2], alpha);
+    strokeWeight(trail.weight + progress * 2);
+
+    beginShape();
+    curveVertex(trail.x1, trail.y1);
+    curveVertex(trail.x1, trail.y1);
+    curveVertex(
+      trail.cx + sin(mv_t * 0.035 + trail.seed) * 60,
+      trail.cy + cos(mv_t * 0.032 + trail.seed) * 42
+    );
+    curveVertex(trail.x2, trail.y2);
+    curveVertex(trail.x2, trail.y2);
+    endShape();
+
+    stroke(MV_GUITAR_YELLOW[0], MV_GUITAR_YELLOW[1], MV_GUITAR_YELLOW[2], alpha * 0.55);
+    strokeWeight(1);
+    line(trail.x1, trail.y1, trail.x2, trail.y2);
+
+    pop();
+
+    if (trail.life <= 0) {
+      mv_guitarTrails.splice(i, 1);
+    }
+  }
+}
+
+
+// --------------------------------------------------
+// STRING WAVES
+// --------------------------------------------------
+
+function mv_drawStringWaves() {
+  for (let i = mv_stringWaves.length - 1; i >= 0; i--) {
+    let wave = mv_stringWaves[i];
+
+    wave.life--;
+
+    let alpha = map(wave.life, 0, wave.maxLife, 0, wave.alpha);
+    let progress = 1 - wave.life / wave.maxLife;
+
+    push();
+
+    translate(width / 2, height / 2);
+    blendMode(ADD);
+    noFill();
+
+    stroke(MV_STRINGS_PURPLE[0], MV_STRINGS_PURPLE[1], MV_STRINGS_PURPLE[2], alpha);
+    strokeWeight(1.5 + progress * 1.5);
 
     beginShape();
 
-    for (let ang = 0; ang <= TWO_PI + 0.1; ang += 0.12) {
-      let wobble = sin(ang * 5 + mv_t * 0.03 + w.seed) * 18;
-      let x = cos(ang) * (radius + wobble);
-      let y = sin(ang) * (radius + wobble * 0.6);
+    let radius = wave.radius + progress * wave.expansion;
+
+    for (let angle = 0; angle <= TWO_PI + 0.1; angle += 0.1) {
+      let wobble =
+        sin(angle * 5 + mv_t * 0.025 + wave.seed) *
+        (14 + mv_stringsHitPulse * 32);
+
+      let x = cos(angle) * (radius + wobble);
+      let y = sin(angle) * (radius + wobble * 0.65);
 
       curveVertex(x, y);
     }
 
     endShape(CLOSE);
 
+    stroke(MV_STRINGS_PINK[0], MV_STRINGS_PINK[1], MV_STRINGS_PINK[2], alpha * 0.45);
+    circle(0, 0, radius * 1.3);
+
     pop();
 
-    w.life--;
-
-    if (w.life <= 0) {
+    if (wave.life <= 0) {
       mv_stringWaves.splice(i, 1);
     }
   }
@@ -678,7 +826,7 @@ function mv_drawStringWaves() {
 
 
 // --------------------------------------------------
-// SYNTH = SPECIAL SIGNAL CORE
+// SYNTH SIGNAL
 // --------------------------------------------------
 
 function mv_drawSynthSignal() {
@@ -691,18 +839,18 @@ function mv_drawSynthSignal() {
   translate(width / 2, height / 2);
   blendMode(ADD);
 
-  let size = 40 + mv_synthPulse * 220;
+  let size = 45 + mv_synthPulse * 240;
 
   noStroke();
 
-  fill(80, 240, 255, 30 + mv_synthPulse * 120);
-  circle(0, 0, size * 2.4);
+  fill(MV_SYNTH_CYAN[0], MV_SYNTH_CYAN[1], MV_SYNTH_CYAN[2], 25 + mv_synthPulse * 130);
+  circle(0, 0, size * 2.3);
 
-  fill(255, 255, 255, 120 + mv_synthPulse * 100);
-  circle(0, 0, size * 0.45);
+  fill(MV_WHITE[0], MV_WHITE[1], MV_WHITE[2], 120 + mv_synthPulse * 120);
+  circle(0, 0, size * 0.42);
 
   noFill();
-  stroke(80, 240, 255, 120 + mv_synthPulse * 100);
+  stroke(MV_SYNTH_CYAN[0], MV_SYNTH_CYAN[1], MV_SYNTH_CYAN[2], 120 + mv_synthPulse * 120);
   strokeWeight(2);
   circle(0, 0, size);
 
@@ -711,7 +859,7 @@ function mv_drawSynthSignal() {
 
 
 // --------------------------------------------------
-// VOCALS = PITCH PLANETS
+// VOCAL PLANETS
 // --------------------------------------------------
 
 function mv_drawVocalPlanets() {
@@ -734,44 +882,43 @@ function mv_drawVocalPlanets() {
 
     let freq = vocalFreq[i];
     let noteName = vocalNoteName[i];
+    let hasPitch = freq > 0 && noteName !== "-";
 
-    let angle = mv_t * (0.012 + i * 0.004) + i * TWO_PI / 3;
-    let orbitRadius = 95 + i * 70;
+    let freqAmount = hasPitch
+      ? constrain(map(freq, 80, 1200, 0, 1), 0, 1)
+      : 0;
 
-    if (freq > 0) {
-      orbitRadius += map(constrain(freq, 80, 1200), 80, 1200, 0, 110);
-    }
+    let angle =
+      mv_t * (0.007 + i * 0.004 + freqAmount * 0.006) +
+      i * TWO_PI / 3;
+
+    let orbitRadius = 105 + i * 78 + freqAmount * 130;
 
     let x = width / 2 + cos(angle) * orbitRadius;
     let y = height / 2 + sin(angle) * orbitRadius * 0.72;
 
-    let col = mv_noteColour(noteName);
+    let colour = hasPitch ? mv_noteColour(noteName) : [160, 170, 190];
 
-    let size;
-
-    if (freq > 0 && noteName !== "-") {
-      size = map(constrain(freq, 80, 1200), 80, 1200, 18, 70);
-    } else {
-      size = 18 + sin(mv_t * 0.05 + i) * 5;
-      col = [180, 190, 210];
-    }
+    let size = hasPitch
+      ? 20 + freqAmount * 58
+      : 18 + sin(mv_t * 0.05 + i) * 4;
 
     noStroke();
 
-    fill(col[0], col[1], col[2], 28);
-    circle(x, y, size * 3.4);
+    fill(colour[0], colour[1], colour[2], 24);
+    circle(x, y, size * 3.7);
 
-    fill(col[0], col[1], col[2], 90);
-    circle(x, y, size * 1.8);
+    fill(colour[0], colour[1], colour[2], 78);
+    circle(x, y, size * 1.9);
 
-    fill(col[0], col[1], col[2], 220);
+    fill(colour[0], colour[1], colour[2], 225);
     circle(x, y, size);
 
-    fill(255, 220);
+    fill(255, 225);
     textAlign(CENTER, CENTER);
     textSize(12);
 
-    if (noteName && noteName !== "-") {
+    if (hasPitch) {
       text("V" + (i + 1) + " " + noteName, x, y + size + 16);
     } else {
       text("V" + (i + 1), x, y + size + 16);
@@ -783,421 +930,237 @@ function mv_drawVocalPlanets() {
 
 
 // --------------------------------------------------
-// PARTICLE CLASS
+// BOTTOM SPECTRUM
 // --------------------------------------------------
 
-class MV_Particle {
-  constructor() {
-    this.reset(true);
+function mv_drawBottomSpectrum(bass, high, centroid) {
+  if (
+    typeof wholeSpectrum === "undefined" ||
+    !wholeSpectrum ||
+    wholeSpectrum.length === 0
+  ) {
+    return;
   }
 
-  reset(any) {
-    this.x = any ? random(width) : random(width * 0.05, width * 0.5);
-    this.y = any ? random(height) : random(height * 0.0, height * 0.45);
-    this.px = this.x;
-    this.py = this.y;
-    this.life = floor(random(60, 190));
-    this.maxL = this.life;
-    this.spd = random(0.6, 2.5);
-    this.w = random(0.3, 1.3);
-    this.seed = random(1000);
-    this.col = random() < 0.75 ? [200, 220, 255] : mv_rc();
-  }
+  let bins = min(wholeSpectrum.length, 256);
 
-  update(b, m) {
-    this.px = this.x;
-    this.py = this.y;
+  noStroke();
 
-    let ang =
-      noise(
-        this.x * 0.0015,
-        this.y * 0.0015,
-        mv_nOff + this.seed * 0.01
-      ) *
-      TWO_PI *
-      2.8;
+  for (let i = 0; i < bins; i++) {
+    let amp = wholeSpectrum[i];
 
-    ang += b * PI * 0.5;
+    let barHeight =
+      map(amp, 0, 255, 0, height * 0.24) *
+      (1 + bass * 0.7);
 
-    this.x += cos(ang) * this.spd * (1 + b * 1.5);
-    this.y += sin(ang) * this.spd * (1 + m * 0.8);
+    let x = map(i, 0, bins, 0, width);
+    let barWidth = width / bins + 1;
 
-    this.life--;
+    let colour = mv_lerpColour(
+      MV_BASS_CYAN,
+      MV_SYNTH_PINK,
+      (i / bins + centroid) % 1
+    );
 
-    if (
-      this.life <= 0 ||
-      this.x < -40 ||
-      this.x > width + 40 ||
-      this.y < -40 ||
-      this.y > height + 40
-    ) {
-      this.reset(false);
-    }
-  }
+    fill(
+      colour[0],
+      colour[1],
+      colour[2],
+      45 + bass * 65 + high * 45
+    );
 
-  show() {
-    let a = map(this.life, 0, this.maxL * 0.2, 0, 1, true) * 170;
-
-    stroke(this.col[0], this.col[1], this.col[2], a);
-    strokeWeight(this.w);
-    line(this.px, this.py, this.x, this.y);
+    rect(x, height - barHeight, barWidth, barHeight);
   }
 }
 
 
 // --------------------------------------------------
-// GLOW DOT CLASS
+// CLASSES
 // --------------------------------------------------
 
-class MV_GlowDot {
-  constructor() {
-    this.reset();
-  }
+class MV_AudioParticle {
+  constructor(index) {
+    this.index = index;
 
-  reset() {
     this.x = random(width);
     this.y = random(height);
-    this.r = random(1.5, 5);
-    this.seed = random(1000);
-    this.life = floor(random(100, 300));
-    this.maxL = this.life;
-    this.col = random() < 0.6 ? [220, 230, 255] : mv_rc();
+
+    this.previousX = this.x;
+    this.previousY = this.y;
+
+    this.baseSpeed = random(0.35, 1.7);
+    this.baseSize = random(0.7, 2.4);
+    this.angleOffset = random(TWO_PI);
+
+    this.colour = random([
+      MV_BASS_CYAN,
+      MV_SYNTH_PINK,
+      MV_GUITAR_GOLD,
+      MV_STRINGS_PURPLE,
+      MV_GREEN
+    ]);
   }
 
-  update() {
-    let ang =
-      noise(
-        this.x * 0.0014,
-        this.y * 0.0014,
-        mv_nOff + this.seed * 0.01
-      ) *
-      TWO_PI *
-      2;
+  update(mid, presence, high) {
+    this.previousX = this.x;
+    this.previousY = this.y;
 
-    this.x += cos(ang) * 0.22;
-    this.y += sin(ang) * 0.22;
+    let angle =
+      this.angleOffset +
+      sin(mv_t * (0.004 + mid * 0.035) + this.index * 0.09) *
+        (1.1 + presence * 2.4);
 
-    this.life--;
+    let speed =
+      this.baseSpeed *
+      (0.6 + mid * 2.4 + presence * 1.6 + high * 1.2);
 
-    if (this.life <= 0) {
-      this.reset();
-    }
+    this.x += cos(angle) * speed;
+    this.y += sin(angle) * speed;
+
+    if (this.x < -40) this.x = width + 40;
+    if (this.x > width + 40) this.x = -40;
+    if (this.y < -40) this.y = height + 40;
+    if (this.y > height + 40) this.y = -40;
   }
 
-  show(h) {
-    let a = map(this.life, 0, this.maxL * 0.15, 0, 1, true);
-    let pulse = 1 + sin(mv_t * 0.06 + this.seed) * 0.28 + h * 0.3;
-    let c = this.col;
+  show(high, presence) {
+    let alpha = 60 + high * 145 + presence * 60;
 
-    noStroke();
-
-    fill(c[0], c[1], c[2], 18 * a);
-    circle(this.x, this.y, this.r * 5 * pulse);
-
-    fill(c[0], c[1], c[2], 55 * a);
-    circle(this.x, this.y, this.r * 2.4 * pulse);
-
-    fill(c[0], c[1], c[2], 200 * a);
-    circle(this.x, this.y, this.r * pulse);
-  }
-}
-
-
-// --------------------------------------------------
-// PENDULUM CLASS
-// --------------------------------------------------
-
-class MV_Pendulum {
-  constructor() {
-    this.reset();
-  }
-
-  reset() {
-    this.ax = random(width * 0.05, width * 0.9);
-    this.ay = random(-height * 0.05, height * 0.12);
-    this.len = random(height * 0.2, height * 0.68);
-    this.angle = random(-PI * 0.4, PI * 0.4);
-    this.aVel = random(-0.015, 0.015);
-    this.damp = random(0.9988, 0.9999);
-    this.r = random(10, 30);
-    this.phase = random(TWO_PI);
-    this.col = mv_rc();
-  }
-
-  update(b) {
-    let grav = 0.002 + b * 0.004;
-
-    this.aVel = this.aVel * this.damp - grav * sin(this.angle);
-    this.angle += this.aVel;
-  }
-
-  show() {
-    let bx = this.ax + sin(this.angle) * this.len;
-    let by = this.ay + cos(this.angle) * this.len;
-    let c = this.col;
-    let p = 1 + sin(mv_t * 0.04 + this.phase) * 0.18;
-
-    stroke(c[0], c[1], c[2], 40);
-    strokeWeight(0.8);
-    line(this.ax, this.ay, bx, by);
-
-    noStroke();
-
-    fill(c[0], c[1], c[2], 14);
-    circle(bx, by, this.r * 3.8 * p);
-
-    fill(c[0], c[1], c[2], 32);
-    circle(bx, by, this.r * 2.2 * p);
-
-    fill(c[0], c[1], c[2], 210);
-    circle(bx, by, this.r * 2 * p);
-  }
-}
-
-
-// --------------------------------------------------
-// ORBITER CLASS
-// --------------------------------------------------
-
-class MV_Orbiter {
-  constructor() {
-    this.cx = random(width * 0.1, width * 0.9);
-    this.cy = random(height * 0.1, height * 0.9);
-    this.rx = random(55, min(width, height) * 0.36);
-    this.ry = this.rx * random(0.3, 1.0);
-    this.tilt = random(TWO_PI);
-    this.spd = random(0.0015, 0.006) * (random() < 0.5 ? 1 : -1);
-    this.angle = random(TWO_PI);
-    this.sz = random(8, 22);
-    this.col = mv_rc();
-    this.col2 = mv_rc();
-    this.type = floor(random(8));
-    this.rot = random(TWO_PI);
-    this.rSpd = random(-0.025, 0.025);
-    this.pulse = random(TWO_PI);
-  }
-
-  pos(a) {
-    let px = cos(a) * this.rx;
-    let py = sin(a) * this.ry;
-
-    return createVector(
-      px * cos(this.tilt) - py * sin(this.tilt) + this.cx,
-      px * sin(this.tilt) + py * cos(this.tilt) + this.cy
+    stroke(
+      this.colour[0],
+      this.colour[1],
+      this.colour[2],
+      alpha
     );
+
+    strokeWeight(this.baseSize + high * 1.4);
+
+    line(this.previousX, this.previousY, this.x, this.y);
+  }
+}
+
+
+class MV_AudioOrbiter {
+  constructor(index) {
+    this.index = index;
+
+    this.cx = random(width * 0.15, width * 0.85);
+    this.cy = random(height * 0.15, height * 0.85);
+
+    this.rx = random(60, min(width, height) * 0.28);
+    this.ry = this.rx * random(0.35, 0.95);
+
+    this.angle = random(TWO_PI);
+    this.tilt = random(TWO_PI);
+
+    this.baseSpeed = random(0.0015, 0.006) * (random() < 0.5 ? -1 : 1);
+    this.size = random(8, 24);
+
+    this.colourA = random([MV_BASS_CYAN, MV_SYNTH_PINK, MV_GUITAR_GOLD, MV_STRINGS_PURPLE]);
+    this.colourB = random([MV_WHITE, MV_BASS_BLUE, MV_SYNTH_CYAN, MV_DRUM_ORANGE]);
+
+    this.shapeType = floor(random(5));
+    this.rotation = random(TWO_PI);
   }
 
-  update(b, m, h) {
-    this.angle += this.spd * (1 + b * 2.2 + m * 0.7);
-    this.rot += this.rSpd + h * 0.015;
-    this.pulse += 0.05;
+  update(bass, mid, high, synth1, synth2) {
+    let synthDrive = synth1 * 0.8 + synth2 * 0.8;
+
+    this.angle += this.baseSpeed * (1 + bass * 2.8 + mid * 1.4 + synthDrive);
+    this.rotation += 0.004 + high * 0.05 + synthDrive * 0.035;
   }
 
-  show() {
-    let p = this.pos(this.angle);
-    let sz = this.sz * (1 + sin(this.pulse) * 0.14) * (1 + mv_B() * 0.45);
+  show(bass, high, synth1, synth2) {
+    let px = cos(this.angle) * this.rx;
+    let py = sin(this.angle) * this.ry;
 
-    noStroke();
+    let x = px * cos(this.tilt) - py * sin(this.tilt) + this.cx;
+    let y = px * sin(this.tilt) + py * cos(this.tilt) + this.cy;
 
-    fill(this.col[0], this.col[1], this.col[2], 16);
-    circle(p.x, p.y, sz * 4.2);
+    let synthDrive = synth1 + synth2;
+
+    let size =
+      this.size *
+      (1 + bass * 0.55 + high * 0.35 + synthDrive * 0.48);
 
     push();
 
-    translate(p.x, p.y);
-    rotate(this.rot);
-    mv_drawShape(this.type, sz, this.col, this.col2);
+    translate(x, y);
+    rotate(this.rotation);
+    blendMode(ADD);
+
+    noStroke();
+
+    fill(
+      this.colourA[0],
+      this.colourA[1],
+      this.colourA[2],
+      28 + high * 55
+    );
+
+    circle(0, 0, size * 4);
+
+    fill(
+      this.colourA[0],
+      this.colourA[1],
+      this.colourA[2],
+      215
+    );
+
+    if (this.shapeType === 0) {
+      circle(0, 0, size);
+    } else if (this.shapeType === 1) {
+      rectMode(CENTER);
+      rect(0, 0, size, size, 3);
+    } else if (this.shapeType === 2) {
+      beginShape();
+      vertex(0, -size);
+      vertex(size * 0.65, 0);
+      vertex(0, size);
+      vertex(-size * 0.65, 0);
+      endShape(CLOSE);
+    } else if (this.shapeType === 3) {
+      noFill();
+      stroke(
+        this.colourA[0],
+        this.colourA[1],
+        this.colourA[2],
+        220
+      );
+      strokeWeight(2);
+      circle(0, 0, size * 1.8);
+    } else {
+      beginShape();
+
+      for (let i = 0; i < 10; i++) {
+        let a = map(i, 0, 10, 0, TWO_PI) - HALF_PI;
+        let r = i % 2 === 0 ? size : size * 0.45;
+        vertex(cos(a) * r, sin(a) * r);
+      }
+
+      endShape(CLOSE);
+    }
 
     pop();
   }
 }
 
 
-// --------------------------------------------------
-// SHAPE DRAWER
-// --------------------------------------------------
-
-function mv_drawShape(type, s, c1, c2) {
-  switch (type) {
-    case 0:
-      fill(c1[0], c1[1], c1[2], 215);
-      stroke(c2[0], c2[1], c2[2], 200);
-      strokeWeight(1);
-
-      beginShape();
-
-      for (let i = 0; i < 10; i++) {
-        let a = map(i, 0, 10, 0, TWO_PI) - HALF_PI;
-        let radius = i % 2 === 0 ? s : s * 0.42;
-
-        vertex(cos(a) * radius, sin(a) * radius);
-      }
-
-      endShape(CLOSE);
-      break;
-
-    case 1:
-      noStroke();
-
-      fill(c1[0], c1[1], c1[2], 28);
-      circle(0, 0, s * 3.2);
-
-      fill(c1[0], c1[1], c1[2], 88);
-      circle(0, 0, s * 1.8);
-
-      fill(c1[0], c1[1], c1[2], 215);
-      circle(0, 0, s);
-      break;
-
-    case 2:
-      fill(c1[0], c1[1], c1[2], 210);
-      stroke(c2[0], c2[1], c2[2], 200);
-      strokeWeight(1.2);
-
-      beginShape();
-      vertex(0, -s);
-      vertex(s * 0.65, 0);
-      vertex(0, s);
-      vertex(-s * 0.65, 0);
-      endShape(CLOSE);
-      break;
-
-    case 3:
-      noFill();
-      stroke(c1[0], c1[1], c1[2], 210);
-      strokeWeight(2.2);
-      circle(0, 0, s * 2);
-      break;
-
-    case 4:
-      fill(c1[0], c1[1], c1[2], 185);
-      stroke(c2[0], c2[1], c2[2], 200);
-      strokeWeight(1.1);
-
-      beginShape();
-      vertex(0, -s);
-      vertex(s * 0.48, -s * 0.18);
-      vertex(s * 0.32, s);
-      vertex(-s * 0.32, s);
-      vertex(-s * 0.48, -s * 0.18);
-      endShape(CLOSE);
-      break;
-
-    case 5:
-      noStroke();
-
-      for (let i = 0; i < 8; i++) {
-        let a = map(i, 0, 8, 0, TWO_PI);
-        let c = i % 2 === 0 ? c1 : c2;
-
-        fill(c[0], c[1], c[2], 195);
-
-        push();
-        translate(cos(a) * s * 0.52, sin(a) * s * 0.52);
-        rotate(a);
-        ellipse(0, 0, s * 0.6, s * 0.3);
-        pop();
-      }
-
-      fill(255, 230, 60, 215);
-      circle(0, 0, s * 0.42);
-      break;
-
-    case 6:
-      noStroke();
-      fill(c1[0], c1[1], c1[2], 215);
-
-      beginShape();
-
-      for (let a = 0; a < TWO_PI; a += 0.06) {
-        let x = s * 0.38 * (16 * pow(sin(a), 3));
-        let y =
-          -s *
-          0.38 *
-          (13 * cos(a) -
-            5 * cos(2 * a) -
-            2 * cos(3 * a) -
-            cos(4 * a));
-
-        vertex(x / 5, y / 5);
-      }
-
-      endShape(CLOSE);
-      break;
-
-    case 7:
-      noFill();
-      stroke(c1[0], c1[1], c1[2], 190);
-      strokeWeight(1.1);
-
-      beginShape();
-
-      for (let a = 0; a < TWO_PI * 3.2; a += 0.08) {
-        let r = (a / (TWO_PI * 3.2)) * s;
-        curveVertex(cos(a) * r, sin(a) * r);
-      }
-
-      endShape();
-      break;
-  }
-}
-
-
-// --------------------------------------------------
-// RIPPLE CLASS
-// --------------------------------------------------
-
-class MV_Ripple {
-  constructor(x, y, targetR, col, maxA, sw) {
-    this.x = x;
-    this.y = y;
-    this.r = 0;
-    this.tR = targetR;
-    this.col = col;
-    this.maxA = maxA;
-    this.sw = sw;
-    this.life = 1.0;
-  }
-
-  get done() {
-    return this.life < 0.015;
-  }
-
-  update() {
-    this.r = lerp(this.r, this.tR, 0.11);
-    this.life = lerp(this.life, 0, 0.042);
-  }
-
-  show() {
-    let a = this.life * this.maxA;
-
-    stroke(this.col[0], this.col[1], this.col[2], a);
-    strokeWeight(this.sw);
-    noFill();
-    circle(this.x, this.y, this.r * 2);
-  }
-}
-
-
-// --------------------------------------------------
-// SHARD CLASS
-// --------------------------------------------------
-
-class MV_Shard {
-  constructor(x, y, v, col) {
+class MV_DrumShard {
+  constructor(x, y, velocity) {
     this.x = x;
     this.y = y;
 
-    let a = random(TWO_PI);
-    let sp = random(2, 5 + v * 8);
+    let angle = random(TWO_PI);
+    let speed = random(2, 5 + velocity * 8);
 
-    this.vx = cos(a) * sp;
-    this.vy = sin(a) * sp;
-    this.life = random(0.5, 1.0);
-    this.col = col;
-    this.sz = random(4, 12 + v * 10);
-    this.rot = random(TWO_PI);
-    this.rSpd = random(-0.18, 0.18);
+    this.vx = cos(angle) * speed;
+    this.vy = sin(angle) * speed;
+
+    this.size = random(4, 12 + velocity * 12);
+    this.life = random(0.45, 1);
+    this.rotation = random(TWO_PI);
+    this.rotationSpeed = random(-0.18, 0.18);
   }
 
   get done() {
@@ -1208,26 +1171,42 @@ class MV_Shard {
     this.x += this.vx;
     this.y += this.vy;
 
-    this.vy += 0.14;
+    this.vy += 0.12;
 
     this.vx *= 0.97;
     this.vy *= 0.97;
 
-    this.rot += this.rSpd;
-    this.life = lerp(this.life, 0, 0.055);
+    this.rotation += this.rotationSpeed;
+    this.life = lerp(this.life, 0, 0.058);
   }
 
   show() {
-    let a = this.life * 210;
-
     push();
 
     translate(this.x, this.y);
-    rotate(this.rot);
+    rotate(this.rotation);
+    blendMode(ADD);
 
-    fill(this.col[0], this.col[1], this.col[2], a);
     noStroke();
-    rect(0, 0, this.sz, this.sz, 2);
+
+    fill(
+      MV_DRUM_ORANGE[0],
+      MV_DRUM_ORANGE[1],
+      MV_DRUM_ORANGE[2],
+      this.life * 220
+    );
+
+    rectMode(CENTER);
+    rect(0, 0, this.size, this.size, 2);
+
+    fill(
+      MV_DRUM_RED[0],
+      MV_DRUM_RED[1],
+      MV_DRUM_RED[2],
+      this.life * 150
+    );
+
+    rect(0, 0, this.size * 0.55, this.size * 0.55, 2);
 
     pop();
   }
@@ -1235,132 +1214,128 @@ class MV_Shard {
 
 
 // --------------------------------------------------
-// HOOK MIDI HIT FUNCTIONS
-// Called once from testvis.js setup()
+// HOOK MIDI OUTPUTS
 // --------------------------------------------------
 
 function mv_hookHits() {
-  let _oB = typeof createBassVisual === "function" ? createBassVisual : null;
-  let _oD = typeof createDrumVisual === "function" ? createDrumVisual : null;
-  let _oG = typeof createGuitarVisual === "function" ? createGuitarVisual : null;
-  let _oS = typeof createStringsVisual === "function" ? createStringsVisual : null;
+  if (mv_hitsHooked) {
+    return;
+  }
+
+  let oldBassVisual =
+    typeof createBassVisual === "function" ? createBassVisual : null;
+
+  let oldDrumVisual =
+    typeof createDrumVisual === "function" ? createDrumVisual : null;
+
+  let oldGuitarVisual =
+    typeof createGuitarVisual === "function" ? createGuitarVisual : null;
+
+  let oldStringsVisual =
+    typeof createStringsVisual === "function" ? createStringsVisual : null;
+
 
   window.createBassVisual = function(note) {
-    if (_oB) {
-      _oB(note);
+    if (oldBassVisual) {
+      oldBassVisual(note);
     }
 
-    mv_bassGravityPulse = max(mv_bassGravityPulse, note.velocity);
+    mv_bassHitPulse = max(mv_bassHitPulse, note.velocity);
 
-    mv_ripples.push(
-      new MV_Ripple(
-        width / 2,
-        height / 2,
-        map(note.velocity, 0, 1, 100, 340),
-        [70, 145, 255],
-        map(note.velocity, 0, 1, 40, 95),
-        3
-      )
-    );
+    mv_bassWaves.push({
+      radius: map(note.velocity, 0, 1, 120, 280),
+      expansion: map(note.velocity, 0, 1, 260, 620),
+      velocity: note.velocity,
+      alpha: map(note.velocity, 0, 1, 55, 130),
+      life: 95,
+      maxLife: 95
+    });
   };
+
 
   window.createDrumVisual = function(note) {
-    if (_oD) {
-      _oD(note);
+    if (oldDrumVisual) {
+      oldDrumVisual(note);
     }
 
-    mv_drumImpactPulse = max(mv_drumImpactPulse, note.velocity);
+    mv_drumHitPulse = max(mv_drumHitPulse, note.velocity);
 
-    let cx = random(width * 0.15, width * 0.85);
-    let cy = random(height * 0.15, height * 0.8);
+    let x = random(width * 0.15, width * 0.85);
+    let y = random(height * 0.15, height * 0.8);
 
-    let shardCount = floor(map(note.velocity, 0, 1, 6, 28));
+    mv_drumBursts.push({
+      x: x,
+      y: y,
+      size: map(note.velocity, 0, 1, 35, 150),
+      velocity: note.velocity,
+      rotation: random(TWO_PI),
+      alpha: map(note.velocity, 0, 1, 50, 150),
+      life: 35,
+      maxLife: 35
+    });
+
+    let shardCount = floor(map(note.velocity, 0, 1, 8, 34));
 
     for (let i = 0; i < shardCount; i++) {
-      mv_shards.push(
-        new MV_Shard(
-          cx,
-          cy,
-          note.velocity,
-          [255, 105, 75]
-        )
-      );
+      mv_drumShards.push(new MV_DrumShard(x, y, note.velocity));
     }
-
-    mv_ripples.push(
-      new MV_Ripple(
-        cx,
-        cy,
-        map(note.velocity, 0, 1, 50, 190),
-        [255, 105, 75],
-        map(note.velocity, 0, 1, 30, 80),
-        2.2
-      )
-    );
   };
 
+
   window.createGuitarVisual = function(note) {
-    if (_oG) {
-      _oG(note);
+    if (oldGuitarVisual) {
+      oldGuitarVisual(note);
     }
 
-    let side = random() < 0.5 ? -1 : 1;
+    mv_guitarHitPulse = max(mv_guitarHitPulse, note.velocity);
+
+    let pitchAmount = 0.5;
+
+    if (typeof note.midi !== "undefined") {
+      pitchAmount = constrain(map(note.midi, 40, 90, 0, 1), 0, 1);
+    }
+
+    let side = pitchAmount < 0.5 ? -1 : 1;
 
     mv_guitarTrails.push({
       x1: width / 2,
       y1: height / 2,
-      cx: width / 2 + side * random(80, 260),
-      cy: random(height * 0.2, height * 0.8),
-      x2: random(width * 0.1, width * 0.9),
-      y2: random(height * 0.15, height * 0.9),
-      life: 55,
-      maxLife: 55,
-      alpha: map(note.velocity, 0, 1, 50, 180),
-      weight: map(note.velocity, 0, 1, 1, 3)
+      cx: width / 2 + side * map(pitchAmount, 0, 1, 90, 330),
+      cy: map(pitchAmount, 0, 1, height * 0.8, height * 0.2),
+      x2: map(pitchAmount, 0, 1, width * 0.12, width * 0.88),
+      y2: random(height * 0.18, height * 0.88),
+      seed: random(1000),
+      life: 65,
+      maxLife: 65,
+      alpha: map(note.velocity, 0, 1, 60, 200),
+      weight: map(note.velocity, 0, 1, 1, 4)
     });
-
-    mv_ripples.push(
-      new MV_Ripple(
-        width / 2,
-        height / 2,
-        map(note.velocity, 0, 1, 70, 220),
-        [255, 210, 80],
-        map(note.velocity, 0, 1, 25, 70),
-        2.5
-      )
-    );
   };
+
 
   window.createStringsVisual = function(note) {
-    if (_oS) {
-      _oS(note);
+    if (oldStringsVisual) {
+      oldStringsVisual(note);
     }
 
-    mv_stringWaves.push({
-      radius: map(note.velocity, 0, 1, 100, 260),
-      life: 120,
-      maxLife: 120,
-      alpha: map(note.velocity, 0, 1, 22, 80),
-      seed: random(1000)
-    });
+    mv_stringsHitPulse = max(mv_stringsHitPulse, note.velocity);
 
-    mv_ripples.push(
-      new MV_Ripple(
-        width / 2,
-        height / 2,
-        map(note.velocity, 0, 1, 140, 420),
-        [190, 110, 255],
-        map(note.velocity, 0, 1, 18, 55),
-        1.5
-      )
-    );
+    mv_stringWaves.push({
+      radius: map(note.velocity, 0, 1, 120, 300),
+      expansion: map(note.velocity, 0, 1, 300, 680),
+      alpha: map(note.velocity, 0, 1, 30, 105),
+      seed: random(1000),
+      life: 145,
+      maxLife: 145
+    });
   };
+
+  mv_hitsHooked = true;
 }
 
 
 // --------------------------------------------------
-// HOOK SYNTH NOTE
-// Makes playSynthNote() create a visible centre pulse
+// HOOK SYNTH OUTPUT
 // --------------------------------------------------
 
 function mv_hookSynth() {
@@ -1372,10 +1347,10 @@ function mv_hookSynth() {
     return;
   }
 
-  let originalPlaySynthNote = playSynthNote;
+  let oldPlaySynthNote = playSynthNote;
 
   window.playSynthNote = function() {
-    originalPlaySynthNote();
+    oldPlaySynthNote();
     mv_synthPulse = 1;
   };
 
