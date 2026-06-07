@@ -29,6 +29,12 @@ function drawOneBounceSwitcher(bouncer) {
   translate(bouncer.x, bouncer.y);
 
   let colour = getBounceColour(bouncer.type);
+  let isMuted = checkIfBouncerMuted(bouncer.type);
+  
+  // Apply grey filter if muted
+  if (isMuted) {
+    colour = [colour[0] * 0.5, colour[1] * 0.5, colour[2] * 0.5];
+  }
 
   drawBounceGlow(bouncer, colour);
   drawBounceShape(bouncer, colour);
@@ -173,6 +179,24 @@ function getBounceColour(type) {
 // --------------------------------------------------
 // SHORT LABEL BY TYPE
 // --------------------------------------------------
+
+function checkIfBouncerMuted(type) {
+  if (type === "bassTrack" && typeof bassMuted !== "undefined") {
+    return bassMuted;
+  }
+  if (type === "drumTrack" && typeof drumMuted !== "undefined") {
+    return drumMuted;
+  }
+  if (type === "guitar" && typeof guitarMuted !== "undefined") {
+    return guitarMuted;
+  }
+  if (type === "vocal") {
+    if (typeof vocalMuted !== "undefined" && Array.isArray(vocalMuted)) {
+      return vocalMuted.every(m => m);
+    }
+  }
+  return false;
+}
 
 function getBounceShortLabel(type) {
   if (type === "bassTrack") return "B";

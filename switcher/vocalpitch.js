@@ -4,6 +4,7 @@ const vocalPitchModelURL =
   "https://cdn.jsdelivr.net/gh/ml5js/ml5-data-and-models/models/pitch-detection/crepe/";
 
 let vocalSounds = [];
+let vocalSoundFiles = [];  // p5.SoundFile objects for reverb processing
 let vocalPitchDetectors = [];
 
 let vocalFreq = [0, 0, 0];
@@ -23,6 +24,12 @@ let vocalAudioContext;
 // --------------------------------------------------
 
 function preloadVocalPitchInputs() {
+  // Create p5.SoundFile objects for reverb processing (Web Audio API)
+  vocalSoundFiles[0] = loadSound("assets/VocalPitchWAV/vocal1.wav");
+  vocalSoundFiles[1] = loadSound("assets/VocalPitchWAV/vocal2.wav");
+  vocalSoundFiles[2] = loadSound("assets/VocalPitchWAV/vocal3.wav");
+  
+  // Create HTML audio elements for pitch detection (captureStream)
   vocalSounds[0] = createAudio("assets/VocalPitchWAV/vocal1.wav");
   vocalSounds[1] = createAudio("assets/VocalPitchWAV/vocal2.wav");
   vocalSounds[2] = createAudio("assets/VocalPitchWAV/vocal3.wav");
@@ -101,6 +108,22 @@ function playVocals() {
     vocalSounds[i].volume(vocalMuted[i] ? 0 : 1);
     vocalSounds[i].loop();
   }
+  
+  if (typeof vocalSoundFiles !== "undefined") {
+    for (let i = 0; i < vocalSoundFiles.length; i++) {
+      if (vocalSoundFiles[i]) {
+        if (typeof vocalSoundFiles[i].stop === "function") {
+          vocalSoundFiles[i].stop();
+        }
+        if (typeof vocalSoundFiles[i].setVolume === "function") {
+          vocalSoundFiles[i].setVolume(vocalMuted[i] ? 0 : 1);
+        }
+        if (typeof vocalSoundFiles[i].loop === "function") {
+          vocalSoundFiles[i].loop();
+        }
+      }
+    }
+  }
 }
 
 
@@ -110,6 +133,14 @@ function pauseVocals() {
   for (let i = 0; i < vocalSounds.length; i++) {
     vocalSounds[i].pause();
     resetSingleVocalPitch(i);
+  }
+  
+  if (typeof vocalSoundFiles !== "undefined") {
+    for (let i = 0; i < vocalSoundFiles.length; i++) {
+      if (vocalSoundFiles[i] && typeof vocalSoundFiles[i].stop === "function") {
+        vocalSoundFiles[i].stop();
+      }
+    }
   }
 }
 
@@ -127,6 +158,11 @@ function unmuteVocal(index) {
 
   if (vocalIsPlaying) {
     vocalSounds[index].volume(1);
+    if (typeof vocalSoundFiles !== "undefined" && vocalSoundFiles[index]) {
+      if (typeof vocalSoundFiles[index].setVolume === "function") {
+        vocalSoundFiles[index].setVolume(1);
+      }
+    }
   }
 }
 
@@ -136,6 +172,11 @@ function muteVocal(index) {
 
   if (vocalIsPlaying) {
     vocalSounds[index].volume(0);
+    if (typeof vocalSoundFiles !== "undefined" && vocalSoundFiles[index]) {
+      if (typeof vocalSoundFiles[index].setVolume === "function") {
+        vocalSoundFiles[index].setVolume(0);
+      }
+    }
   }
 
   resetSingleVocalPitch(index);
@@ -150,6 +191,11 @@ function unmuteAllVocals() {
 
     if (vocalIsPlaying) {
       vocalSounds[i].volume(1);
+      if (typeof vocalSoundFiles !== "undefined" && vocalSoundFiles[i]) {
+        if (typeof vocalSoundFiles[i].setVolume === "function") {
+          vocalSoundFiles[i].setVolume(1);
+        }
+      }
     }
   }
 }
@@ -161,6 +207,11 @@ function muteAllVocals() {
 
     if (vocalIsPlaying) {
       vocalSounds[i].volume(0);
+      if (typeof vocalSoundFiles !== "undefined" && vocalSoundFiles[i]) {
+        if (typeof vocalSoundFiles[i].setVolume === "function") {
+          vocalSoundFiles[i].setVolume(0);
+        }
+      }
     }
 
     resetSingleVocalPitch(i);

@@ -323,6 +323,10 @@ function createStringsVisual(note) {
 function mousePressed() {
   userStartAudio();
 
+  if (typeof handleBounceClick === "function" && handleBounceClick(mouseX, mouseY)) {
+    return;
+  }
+
   if (musicIsPlaying) {
     pauseAllMusic();
   } else {
@@ -434,14 +438,27 @@ function drawMusicStatus() {
     text("CLICK TO PLAY", width / 2, 30);
   }
 
+ // textSize(12);
+ // fill(255, 220);
+ // text(
+ //   "Moving triggers control instrument when clicked (to mute/unmute) or when they hit the wall (to switch track). Wall boundaries are adjustable with slider. Left/Right postion = Pan| Distance from Centre = Reverb Amount.",
+ //   width / 2,
+ //   height - 24
+ // );
   textSize(12);
   fill(255, 220);
-  text(
-    "Big blue/red choose bass/drum tracks. Small blue/red turn bass/drums on/off. Pink controls vocals. Gold controls guitar. Cyan controls synth.",
-    width / 2,
-    height - 24
-  );
+  textAlign(CENTER, CENTER);
 
+  text(
+    "Moving triggers control instrument when clicked (to mute/unmute) or when they hit the wall (to switch track).",
+    width / 2,
+    height - 40
+  );
+  text(
+    "Wall boundaries are adjustable with slider. Left/Right position = Pan | Distance from Centre = Reverb Amount.",
+    width / 2,
+    height - 20
+  );
   pop();
 }
 
