@@ -50,6 +50,12 @@ function drawOneBounceSwitcher(bouncer) {
   translate(bouncer.x, bouncer.y);
 
   let colour = getBounceColour(bouncer.type);
+  let isMuted = checkIfBouncerMuted(bouncer.type);
+
+  // dim a muted track to about half brightness
+  if (isMuted) {
+    colour = [colour[0] * 0.5, colour[1] * 0.5, colour[2] * 0.5];
+  }
 
   drawBounceGlow(bouncer, colour);
   drawBounceShape(bouncer, colour);
@@ -71,6 +77,7 @@ function drawBounceGlow(bouncer, colour) {
   noStroke();
 
   let phase = bouncePhase (bouncer);
+  // glow opacity gently rises and falls
   let breathe = 0.5 + 0.5 * sin(frameCount * 0.06 + phase);
 
   fill(colour[0], colour[1], colour[2], 30 + breathe * 30);
@@ -147,12 +154,15 @@ function drawBounceSparks(bouncer, colour) {
   let strength = bounceHitStrength(bouncer);
   let count = 3;
 
+  // orbit radius breathes and pushes outward on a hit (esp drum/bass)
   let radius = 
     bouncer.size * 0.85 * bouncePulse (bouncer) + 
     bouncer.flash * 0.6 * strength;
 
+  // spin faster when flash is high after a bounce
     let spin = frameCount * 0.04 + bouncer.flash * 0.05 * strength + phase;
 
+  //brighter on fresh hit
     let alpha = 150 + bouncer.flash * (1 + strength);
 
     noStroke();
@@ -247,6 +257,30 @@ function getBounceColour(type) {
 }
 
 
+// --------------------------------------------------
+// IS THIS TRACK MUTED?
+// Reads mute state set by the logic file.
+// --------------------------------------------------
+ 
+function checkIfBouncerMuted(type) {
+  if (type === "bassTrack" && typeof bassMuted !== "undefined") {
+    return bassMuted;
+  }
+  if (type === "drumTrack" && typeof drumMuted !== "undefined") {
+    return drumMuted;
+  }
+  if (type === "guitar" && typeof guitarMuted !== "undefined") {
+    return guitarMuted;
+  }
+  if (type === "vocal") {
+    if (typeof vocalMuted !== "undefined" && Array.isArray(vocalMuted)) {
+      return vocalMuted.every(m => m);
+    }
+  }
+  return false;
+}
+ 
+ 
 // --------------------------------------------------
 // SHORT LABEL BY TYPE
 // --------------------------------------------------
