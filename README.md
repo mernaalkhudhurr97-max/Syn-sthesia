@@ -1,5 +1,3 @@
-<img width="468" height="457" alt="image" src="https://github.com/user-attachments/assets/a78f6328-24c7-4fe6-8497-b3d35a394974" /># Living Score
-
 **Living Score** is an interactive audiovisual piece built with p5.js, p5.sound, and MIDI timing data. Audio layers and moving visuals are tightly linked: note events shape the visuals, and moving objects also reshape the audio mix.
 
 ## Project Direction
