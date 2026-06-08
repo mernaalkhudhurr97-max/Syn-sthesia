@@ -741,7 +741,7 @@ function drawBounceUI() {
   fill(255);
   textAlign(CENTER, CENTER);
   const addButtonCenterX = addSynthButton.x + addSynthButton.width / 2;
-  text("ADD SYNTH NOTE", addButtonCenterX, addSynthButton.y - 6);
+  text("ADD SYNTH NOTES", addButtonCenterX, addSynthButton.y - 6);
   text(
     synthSpheres.length + " / " + MAX_SYNTH_SPHERES,
     addButtonCenterX,
@@ -762,7 +762,7 @@ function drawBounceUI() {
   );
 
   fill(255);
-  text("REMOVE SYNTH NOTE", removeSynthButton.x + removeSynthButton.width / 2, removeSynthButton.y - 6);
+  text("REMOVE SYNTH NOTES", removeSynthButton.x + removeSynthButton.width / 2, removeSynthButton.y - 6);
   text(
     synthSpheres.length > 0 ? "Remove last note" : "No notes to remove",
     removeSynthButton.x + removeSynthButton.width / 2,
