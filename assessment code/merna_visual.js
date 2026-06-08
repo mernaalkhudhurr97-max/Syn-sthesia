@@ -851,15 +851,23 @@ class MV_Shard {
 
 // --------------------------------------------------
 // HOOK REAL HITS INTO OBJECT SYSTEM
-// Call this after createBassVisual etc exist
+// Call this after createBassVisual, etc. exist
+// --------------------------------------------------
+// --------------------------------------------------
+// AUDIO OUTPUT HOOKS
+// These functions connect MIDI outputs from the
+// bass, drums, guitar, and strings systems to the
+// visual background effects.
 // --------------------------------------------------
 
 function mv_hookHits() {
+  
   let oldBass = typeof createBassVisual === "function" ? createBassVisual : null;
   let oldDrum = typeof createDrumVisual === "function" ? createDrumVisual : null;
   let oldGuitar = typeof createGuitarVisual === "function" ? createGuitarVisual : null;
   let oldStrings = typeof createStringsVisual === "function" ? createStringsVisual : null;
 
+  
   window.createBassVisual = function(note) {
     if (oldBass) oldBass(note);
 
@@ -885,7 +893,10 @@ function mv_hookHits() {
       mv_shards.push(new MV_Shard(cx, cy, note.velocity, [255, 105, 75]));
     }
   };
-
+  
+// Guitar notes create yellow ripple effects.
+// Higher note velocity creates larger visuals.
+  
   window.createGuitarVisual = function(note) {
     if (oldGuitar) oldGuitar(note);
 
@@ -893,13 +904,16 @@ function mv_hookHits() {
       new MV_Ripple(
         random(width * 0.35, width * 0.65),
         random(height * 0.35, height * 0.65),
-        map(note.velocity, 0, 1, 70, 230),
+         map(note.velocity, 0, 1, 90, 280),
         [255, 210, 80],
         map(note.velocity, 0, 1, 28, 70),
         2.5
       )
     );
   };
+
+  // Strings notes create large purple expanding rings.
+// Used to emphasise sustained musical sections.
 
   window.createStringsVisual = function(note) {
     if (oldStrings) oldStrings(note);
