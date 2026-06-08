@@ -154,15 +154,13 @@ function drawBounceSparks(bouncer, colour) {
   let strength = bounceHitStrength(bouncer);
   let count = 3;
 
-  // orbit radius breathes and pushes outward on a hit (esp drum/bass)
+  
   let radius = 
     bouncer.size * 0.85 * bouncePulse (bouncer) + 
     bouncer.flash * 0.6 * strength;
 
-  // spin faster when flash is high after a bounce
     let spin = frameCount * 0.04 + bouncer.flash * 0.05 * strength + phase;
 
-  //brighter on fresh hit
     let alpha = 150 + bouncer.flash * (1 + strength);
 
     noStroke();
