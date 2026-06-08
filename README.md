@@ -32,9 +32,13 @@ Uses audio files and MIDI timing to trigger visuals, sync layers, and manage the
 **Owner: Hayley**
 
 The switch-visual layer renders each bouncing object so that its appearance is in constant motion and responds to the activity of the track it represents. Every object itself now has a continuous, time-based motion compared to just adding a static shape. Their size will gently pulse, rotate slowly and give off a glow fading in and out. Such adds a lively view to the scene and evolves quality between events and the per-object phase introduced will keep the object pulsing and spinning in lockstep. 
+
 The particle details are added based on the set of small spark points for object orbits. They circle calmly during steady playbacks and double when an event-driven burst occurs. For example, when an object registers for a hit, the sparks will accelerate, brighten and grow, pushing outward before another animation happens, impacting with a higher energy. 
+
 The layer responding to the note and track events through the hit signal passed in from the logic layer (bouncer.flash), which spikes whenever an object is struck. The signal drives a size pop, spin kick, spark burst and expanding in a coloured ring format, so that each event is performed as a type of visual energy that naturally decays. The strength of response is tied to the type of sound, where drum and bass react the hardest, guitar reacts moderately and vocal and synth stay deliberately subtle so that the intensity of the motion and particles scales according to their role and the energy of each part instead of reacting identically. 
+
 The colour and detail also evolve with the track state, where each instrument has a distinct and evenly spaced colour so that they can be easily distinguished. With the track being muted, the function being added as well, the shape, glow and shockwave of the object will dim roughly half of its original brightness, giving off an immediate visual cue of change. 
+
 These changes work towards the goal of motion, particles, and evolving visual detail which responds to audio energy and note events. The time-based motion keeps the visuals alive and the sparks act as the particle layer where the event-driven reactions will transform the note events and relative energy of each part into a proportional visual response. The audio-energy is performed in the logic layer and added to this file according to the state of each object which turns the layer into on-screen motion and detail. 
 
 ### Mechanic 3: Background Visual  
