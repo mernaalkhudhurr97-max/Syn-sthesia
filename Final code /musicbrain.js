@@ -28,6 +28,14 @@
 // 6. draws switchcode.js bouncing control objects
 // --------------------------------------------------
 
+// --------------------------------------------------
+// AI ACKNOWLEDGEMENT
+//
+// ChatGPT was used to help improve code comments, add safer checks,
+// and explain the MIDI timing/synchronisation structure.
+// The bass audio logic and final implementation were reviewed
+// and adapted for this project.
+// --------------------------------------------------
 
 // --------------------------------------------------
 // GLOBAL MUSIC STATE
