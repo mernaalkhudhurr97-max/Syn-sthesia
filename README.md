@@ -44,7 +44,25 @@ These changes work towards the goal of motion, particles, and evolving visual de
 ### Mechanic 3: Background Visual  
 **Owner: Merna**
 
-Generates gradients, noise, and texture changes that shift with the music and layer activity.
+Generates reactive background visuals that respond to the music system.
+
+The background uses:
+- Bass MIDI hits
+- Drum MIDI hits
+- Guitar MIDI hits
+- Strings MIDI hits
+- Synth FFT energy analysis
+- Vocal pitch detection
+
+Visual effects include:
+- Expanding ripple animations
+- Reactive particle systems
+- Aurora-style background waves
+- Orbiting visual objects
+- Dynamic colour transitions
+- Audio-responsive motion and texture changes
+
+The goal is to make the background respond directly to audio events rather than operate as an independent animation layer.
 
 ### Mechanic 4: Visual Control of Audio Effects  
 **Owner: Zach**
