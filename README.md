@@ -26,7 +26,9 @@ Living Score aims to be a two-way audiovisual ecosystem. Music timing drives the
 ### Mechanic 1: Audio / Music Output System  
 **Owner: Jake**
 
-Uses audio files and MIDI timing to trigger visuals, sync layers, and manage the main play/pause flow.
+The project uses multiple audio layers, including bass, drums, guitar, strings, synth textures and vocals, which are loaded as separate files and controlled through a central playback system. The bass, drum and string sections each use matching MIDI files to detect when notes or hits occur, allowing the visuals to react to real musical timing rather than random animation. The guitar also uses MIDI timing to create visual responses to individual notes.
+The synth and whole-track FFT systems analyse the frequency content of the music, including spectrum, centroid and energy across different frequency bands. These values help drive larger visual changes such as background movement, intensity and texture. The vocal system adds another layer by using pitch detection to track vocal frequency and note names, allowing the visual system to respond to melodic vocal information as well.
+All of these systems are coordinated by musicbrain.js, which manages loading, setup, play/pause control, MIDI hit checking, FFT updating and communication with the final visual layer. This makes the final work a synchronised audio-visual system where sound structure directly shapes what happens on screen.
 
 ### Mechanic 2: Random Animation  
 **Owner: Hayley**
