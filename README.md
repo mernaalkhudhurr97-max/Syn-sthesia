@@ -73,7 +73,7 @@ The goal is to make the background respond directly to audio events rather than 
 ### Mechanic 4: Visual Control of Audio Effects  
 **Owner: Zach**
 
-Uses bouncing objects as controllers that mute/unmute layers, switch tracks, control audio effects, and trigger synth notes based on collisions.
+With the moving 'bouncers' from Mechanic 4, they act as controllers that mute/unmute layers, switch tracks, control audio effects, and trigger synth notes based on collisions. This collision size is adjustable, to control the extent by which the effect is applied (panning and reverb). More notes can be added by generating up to 5 more bouncers that control note triggers. This completes the feedback loop of the music affecting the visuals, and the visuals then affecting the music. 
 
 ## Part 3: Putting It Together
 
@@ -121,4 +121,10 @@ The final piece combines audio playback, MIDI-driven visual triggers, and intera
 
 - The project runs best in a browser that supports Web Audio.
 - The visuals and audio are designed to work together: audio events feed the animation, and object movement feeds the mix.
+
+---
+
+## AI Acknowledgement
+
+- AI has been used to correct syntax, debug, and format components of the code. 
 
