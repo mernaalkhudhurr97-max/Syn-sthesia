@@ -1,6 +1,6 @@
 
 
-/// drum output variables
+/// Drum same to bass and guitar not going to write it out three times 
 
 let drumSongs = [];
 let drumMidiTracks = [];

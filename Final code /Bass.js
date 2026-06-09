@@ -1,4 +1,27 @@
-// bass inputs 
+// --------------------------------------------------
+// BASS AUDIO + MIDI MECHANIC
+// Creative Coding Final Project
+//
+// This file controls the bass layer of the project.
+// It loads four bass audio files and four matching MIDI files.
+// All bass audio files play at the same time so they stay synchronised,
+// but only one bass track is audible at a time.
+//
+// The MIDI files are used to trigger bass visuals at the correct musical time.
+//
+// External tool / technique:
+// The Midi class comes from the Tone.js MIDI library.
+// It allows the browser to read .mid files and access note data such as
+// pitch, velocity and tick position.
+// Source: https://github.com/Tonejs/Midi
+// --------------------------------------------------
+
+
+// --------------------------------------------------
+// BASS STATE VARIABLES
+// --------------------------------------------------
+
+// Stores the four loaded bass WAV audio files.
 
 let bassSongs = [];
 let bassMidiTracks = [];
@@ -8,11 +31,17 @@ let bassIsPlaying = false;
 let bassMuted = false;
 
 let bassBPM = 160;
+
+// Fade time used when changing bass volume.
+// This prevents sudden clicks when switching or muting tracks.
 let bassFadeTime = 0.05;
 
 
 // --------------------------------------------------
-// LOAD ALL BASS WAV FILES
+// PRELOAD BASS WAV FILES
+//
+// This function is called from preload() in musicbrain.js.
+// p5.js loads the audio files before the sketch starts.
 // --------------------------------------------------
 
 function preloadBassInputs() {
@@ -24,7 +53,10 @@ function preloadBassInputs() {
 
 
 // --------------------------------------------------
-// LOAD ALL BASS MIDI FILES
+// SETUP BASS MIDI FILES
+//
+// This function is called from setup() in musicbrain.js.
+// Each MIDI file matches one bass audio file.
 // --------------------------------------------------
 
 function setupBassInputs() {
@@ -38,7 +70,17 @@ function setupBassInputs() {
 
 
 // --------------------------------------------------
-// LOAD MIDI DATA
+// LOAD AND PARSE MIDI DATA
+//
+// fetch() loads the .mid file as binary data.
+// The Tone.js Midi parser then converts it into note information.
+//
+// Each note is stored with:
+// - midi: pitch number
+// - name: musical note name
+// - time: note time in seconds
+// - velocity: note strength
+// - triggered: whether the visual has already been triggered
 // --------------------------------------------------
 
 function loadBassMidiFile(path, index) {
@@ -92,9 +134,13 @@ function bassTicksToSeconds(ticks, ppq, bpm) {
 
 
 // --------------------------------------------------
-// soo silly of course bass has to all play at the same time otherwise it isnt in time. 
+// PLAY BASS LAYER
+//
+// All four bass audio files are started together.
+// This keeps them synchronised on the same timeline.
+// Only the active bass track is heard because the other tracks
+// are set to volume 0.
 // --------------------------------------------------
-
 function playBass() {
   for (let i = 0; i < bassSongs.length; i++) {
     bassSongs[i].stop();
@@ -132,6 +178,14 @@ function setBassVolumes() {
 }
 
 
+// --------------------------------------------------
+// SWITCH ACTIVE BASS TRACK
+//
+// This changes which bass track is audible.
+// The audio files do not restart, so the bass remains synchronised
+// with the rest of the music.
+// --------------------------------------------------
+
 function switchBassTrack(newTrack) {
   activeBassTrack = newTrack;
   bassMuted = false;
@@ -142,6 +196,13 @@ function switchBassTrack(newTrack) {
   syncAllBassMidiToCurrentTime();
 }
 
+
+// --------------------------------------------------
+// MUTE BASS LAYER
+//
+// The audio timeline keeps running, but the volume is set to 0.
+// This means the bass can be unmuted later without losing sync.
+// --------------------------------------------------
 
 function muteBass() {
   bassMuted = true;
