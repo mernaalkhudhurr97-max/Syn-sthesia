@@ -30,6 +30,10 @@ The project uses multiple audio layers, including bass, drums, guitar, strings, 
 The synth and whole-track FFT systems analyse the frequency content of the music, including spectrum, centroid and energy across different frequency bands. These values help drive larger visual changes such as background movement, intensity and texture. The vocal system adds another layer by using pitch detection to track vocal frequency and note names, allowing the visual system to respond to melodic vocal information as well.
 All of these systems are coordinated by musicbrain.js, which manages loading, setup, play/pause control, MIDI hit checking, FFT updating and communication with the final visual layer. This makes the final work a synchronised audio-visual system where sound structure directly shapes what happens on screen.
 
+this included making the music for the track and designing it in away that can change 4 different bass lines, drum pattern and strings sections. As well as changing vocals lines made it challenging song to compose.
+
+![Music making](images/musicmaking.png)
+
 ### Mechanic 2: Random Animation  
 **Owner: Hayley**
 
